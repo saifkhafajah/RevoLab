@@ -3,7 +3,7 @@
 ![Version](https://img.shields.io/badge/version-1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-stable-success)
-![Powered By](https://img.shields.io/badge/AI-Gemini-purple)
+![Platforms](https://img.shields.io/badge/mac-windows-linux-purple)
 
 > **An advanced, browser-based industrial robotics simulator featuring real-time kinematics, AI-powered scripting, and workspace analysis.**
 
