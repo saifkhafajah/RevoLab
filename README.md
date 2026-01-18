@@ -1,4 +1,4 @@
-# RevoLab Simulator v5.0 🦾
+# RevoLab Simulator Beta v1.0 🦾
 
 ![Version](https://img.shields.io/badge/version-1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
