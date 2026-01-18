@@ -39,7 +39,7 @@ You can run RevoLab instantly in your browser via GitHub Pages or host it locall
 ### Installation
 1.  **Clone the repo:**
     ```bash
-    git clone [https://github.com/yourusername/RevoLab.git](https://github.com/yourusername/RevoLab.git)
+    git clone [https://github.com/saifkhafajah/RevoLab.git]
     ```
 
 2.  **Run the simulator:**
