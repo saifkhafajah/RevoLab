@@ -1,48 +1,58 @@
-# RevoLab
-Project Title: # RevoLab Simulator v5.0 🦾
-Short Tagline:
-An advanced, browser-based industrial robotics simulator featuring real-time kinematics, AI-powered scripting, and workspace analysis.
+# RevoLab Simulator v5.0 🦾
 
-Description:
-RevoLab is a high-fidelity, open-source 3D robotic arm simulator designed for engineers, researchers, and students. Built with Three.js, it provides a seamless industrial-grade environment to design, test, and analyze robotic configurations using the Denavit-Hartenberg (DH) convention.
+![Version](https://img.shields.io/badge/version-1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-stable-success)
+![Powered By](https://img.shields.io/badge/AI-Gemini-purple)
 
-Unlike traditional simulators, RevoLab features an AI Copilot powered by Google Gemini, allowing users to program complex robot movements using natural language commands.
+> **An advanced, browser-based industrial robotics simulator featuring real-time kinematics, AI-powered scripting, and workspace analysis.**
 
-🚀 Key Features:
-Dynamic Kinematics Engine: Gradient-descent based Inverse Kinematics (IK) and Forward Kinematics (FK) for any DOF configuration.
+## 📖 Description
+**RevoLab** is a high-fidelity, open-source 3D robotic arm simulator designed for engineers, researchers, and students. Built with Three.js, it provides a seamless industrial-grade environment to design, test, and analyze robotic configurations using the **Denavit-Hartenberg (DH)** convention.
 
-✨ Gemini AI Copilot: Instantly translate English commands like "Pick up the crate and move it to the center" into executable RevoScript.
+Unlike traditional simulators, RevoLab features an **AI Copilot powered by Google Gemini**, allowing users to program complex robot movements using natural language commands.
 
-📊 MATLAB-Style Plotting: Real-time floating trajectory window to monitor TCP (Tool Center Point) coordinates.
+---
 
-🛡️ Workspace Analysis: Generate smooth, volumetric 3D Convex Hulls to visualize the robot's physical reach.
+## 🚀 Key Features
 
-🖥️ Industrial Visualization: High-performance 3D rendering with path tracing, ghost targets, and joint coordinate frames.
+* **Dynamic Kinematics Engine:** Gradient-descent based Inverse Kinematics (IK) and Forward Kinematics (FK) for any DOF configuration.
+* **✨ Gemini AI Copilot:** Instantly translate English commands like *"Pick up the crate and move it to the center"* into executable RevoScript.
+* **📊 MATLAB-Style Plotting:** Real-time floating trajectory window to monitor TCP (Tool Center Point) coordinates.
+* **🛡️ Workspace Analysis:** Generate smooth, volumetric 3D Convex Hulls to visualize the robot's physical reach.
+* **🖥️ Industrial Visualization:** High-performance 3D rendering with path tracing, ghost targets, and joint coordinate frames.
+* **🛠️ Embedded Export:** Generate production-ready **C++** and **Python (NumPy)** driver code directly from your custom DH parameters.
+* **🕹️ Interactive Control:** Precision jogging, joint overrides, and smooth interpolation for realistic mechanical motion.
 
-🛠️ Embedded Export: Generate production-ready C++ and Python (NumPy) driver code directly from your custom DH parameters.
+## 🛠️ Built With
+* **Three.js** (WebGL 3D Engine)
+* **Google Gemini API** (LLM Integration)
+* **JavaScript** (ES6+)
+* **HTML5/CSS3** (Cyber-Industrial Theme)
 
-🕹️ Interactive Control: Precision jogging, joint overrides, and smooth interpolation for realistic mechanical motion.
+---
 
-🛠️ Built With:
-Three.js (WebGL 3D Engine)
+## 🏁 Getting Started
 
-Google Gemini API (LLM Integration)
+You can run RevoLab instantly in your browser via GitHub Pages or host it locally.
 
-JavaScript (ES6+)
+### Installation
+1.  **Clone the repo:**
+    ```bash
+    git clone [https://github.com/yourusername/RevoLab.git](https://github.com/yourusername/RevoLab.git)
+    ```
 
-HTML5/CSS3 
+2.  **Run the simulator:**
+    * Simply open `index.html` in any modern browser.
+    * *(Optional)* Run the Python launcher for a dedicated local server experience:
+        ```bash
+        python launcher.py
+        ```
 
-🏁 Getting Started:
-You can run RevoLab instantly in your browser via GitHub Pages or host it locally:
+## 📜 License
+Distributed under the **MIT License**. See `LICENSE` for more information.
 
-Clone the repo: git clone https://github.com/yourusername/RevoLab.git
+---
 
-Open index.html in any modern browser.
-
-(Optional) Run python launcher.py for a dedicated local server experience.
-
-📜 License:
-Distributed under the MIT License. See LICENSE for more information.
-
-👤 Created By:
-Saif Khafajah
+## 👤 Created By
+**Saif Khafajah** *Engineer & Developer*
