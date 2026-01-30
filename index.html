@@ -35,7 +35,7 @@
         body { margin: 0; background-color: var(--bg-app); color: var(--text-main); font-family: var(--font-ui); overflow: hidden; height: 100vh; display: flex; }
 
         #app-container { display: flex; width: 100%; height: 100%; }
-        #sidebar { width: 420px; background-color: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 10; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+        #sidebar { width: 420px; min-width: 420px; background-color: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 10; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
         #viewport { flex-grow: 1; position: relative; background: radial-gradient(circle at center, #1a1a1a 0%, #000000 120%); overflow: hidden; }
 
         /* Components */
@@ -99,7 +99,7 @@
         .hud-value { font-family: var(--font-mono); font-size: 14px; color: var(--text-highlight); font-weight: 700; }
         .hud-value.accent { color: var(--accent-primary); }
 
-        #toast-area { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        #toast-area { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 100; }
         .toast { background: #1a1a1a; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 12px; border: 1px solid var(--border-color); box-shadow: 0 5px 20px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateY(10px); animation: popIn 0.3s forwards; }
         @keyframes popIn { to { opacity: 1; transform: translateY(0); } }
 
@@ -109,6 +109,9 @@
         
         #ai-prompt { background: rgba(255, 145, 0, 0.05); border: 1px solid var(--accent-primary); color: #fff; font-family: var(--font-ui); margin-bottom: 8px; }
         #ai-prompt::placeholder { color: #886644; }
+
+        .hw-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; display: inline-block; margin-right: 5px; }
+        .hw-status-dot.connected { background: var(--status-ok); box-shadow: 0 0 5px var(--status-ok); }
     </style>
 </head>
 <body>
@@ -142,6 +145,31 @@
                 <div class="btn-grid">
                     <button onclick="Sim.resetCamera()">Reset View</button>
                     <button class="danger" onclick="Sim.hardReset()">Hard Reset</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">
+                    <span>Hardware Bridge (Serial)</span>
+                    <div style="display:flex; align-items:center;">
+                        <div id="hw-dot" class="hw-status-dot"></div>
+                        <span id="hw-status-text" style="font-size:9px; color:var(--text-muted)">DISCONNECTED</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <label>Baud Rate</label>
+                    <select id="baud-rate" style="width: 100px;">
+                        <option value="9600">9600</option>
+                        <option value="57600">57600</option>
+                        <option value="115200" selected>115200</option>
+                    </select>
+                </div>
+                <div class="btn-grid">
+                    <button class="primary" id="btn-hw-connect" onclick="Hardware.connect()">Connect Controller</button>
+                    <button onclick="Hardware.disconnect()" id="btn-hw-disconnect" style="display:none;">Disconnect</button>
+                </div>
+                <div style="margin-top:10px; font-size:10px; color:var(--text-muted); line-height:1.4;">
+                    Streams: <code style="color:var(--accent-primary)">q1, q2, ... qn \n</code>
                 </div>
             </div>
             
@@ -191,6 +219,10 @@
                     <label>Visuals</label>
                     <button onclick="View.toggleFrames()">Toggle Joint Frames</button>
                 </div>
+                <div class="row">
+                    <label>Assets</label>
+                    <button onclick="Env.spawnCrate()">Spawn Target Crate</button>
+                </div>
             </div>
         </div>
 
@@ -199,17 +231,17 @@
             <div class="control-section">
                 <div class="section-title">Inverse Kinematics</div>
                 <div class="row">
-                    <input type="number" id="ik-x" placeholder="X" value="1.0" step="0.1" oninput="Robot.liveIK()">
-                    <input type="number" id="ik-y" placeholder="Y" value="1.0" step="0.1" oninput="Robot.liveIK()">
-                    <input type="number" id="ik-z" placeholder="Z" value="0.5" step="0.1" oninput="Robot.liveIK()">
+                    <input type="number" id="ik-x" placeholder="X" value="1.0" step="0.01" oninput="Robot.liveIK()">
+                    <input type="number" id="ik-y" placeholder="Y" value="1.0" step="0.01" oninput="Robot.liveIK()">
+                    <input type="number" id="ik-z" placeholder="Z" value="0.5" step="0.01" oninput="Robot.liveIK()">
                 </div>
                 <div class="btn-grid tri" style="margin-top:10px;">
-                    <button onmousedown="Robot.startJog('x', 0.05)" onmouseup="Robot.stopJog()">X+</button>
-                    <button onmousedown="Robot.startJog('y', 0.05)" onmouseup="Robot.stopJog()">Y+</button>
-                    <button onmousedown="Robot.startJog('z', 0.05)" onmouseup="Robot.stopJog()">Z+</button>
-                    <button onmousedown="Robot.startJog('x', -0.05)" onmouseup="Robot.stopJog()">X-</button>
-                    <button onmousedown="Robot.startJog('y', -0.05)" onmouseup="Robot.stopJog()">Y-</button>
-                    <button onmousedown="Robot.startJog('z', -0.05)" onmouseup="Robot.stopJog()">Z-</button>
+                    <button onmousedown="Robot.startJog('x', 0.05)" onmouseup="Robot.stopJog()" onmouseleave="Robot.stopJog()">X+</button>
+                    <button onmousedown="Robot.startJog('y', 0.05)" onmouseup="Robot.stopJog()" onmouseleave="Robot.stopJog()">Y+</button>
+                    <button onmousedown="Robot.startJog('z', 0.05)" onmouseup="Robot.stopJog()" onmouseleave="Robot.stopJog()">Z+</button>
+                    <button onmousedown="Robot.startJog('x', -0.05)" onmouseup="Robot.stopJog()" onmouseleave="Robot.stopJog()">X-</button>
+                    <button onmousedown="Robot.startJog('y', -0.05)" onmouseup="Robot.stopJog()" onmouseleave="Robot.stopJog()">Y-</button>
+                    <button onmousedown="Robot.startJog('z', -0.05)" onmouseup="Robot.stopJog()" onmouseleave="Robot.stopJog()">Z-</button>
                 </div>
             </div>
 
@@ -245,19 +277,19 @@ HOME
 GRIP 0
 
 // Approach
-MOVE 1.2 0.5 0.5
+MOVE 1.0 0.5 0.5
 WAIT 500
 
 // Descent
-MOVE 1.2 0.1 0.5
+MOVE 1.0 0.1 0.5
 WAIT 500
 GRIP 1
 WAIT 500
 
 // Lift
-MOVE 1.2 0.8 0.5
+MOVE 1.0 0.8 0.5
 // Move Away
-MOVE 0.0 0.8 1.2
+MOVE 0.0 0.8 1.0
 // Drop
 GRIP 0
 HOME</textarea>
@@ -288,10 +320,10 @@ HOME</textarea>
                         <option value="python">Python (NumPy)</option>
                     </select>
                 </div>
-                <div class="editor-wrapper">
+                <div class="editor-wrapper" style="margin-top: 10px;">
                     <textarea id="export-area" class="code-area" readonly></textarea>
                 </div>
-                <button class="primary" style="margin-top:10px;" onclick="CodeGen.copy()">Copy to Clipboard</button>
+                <button class="primary" style="margin-top:10px; width: 100%;" onclick="CodeGen.copy()">Copy to Clipboard</button>
             </div>
         </div>
 
@@ -402,7 +434,7 @@ const Robot = {
             const p = this.dh[i];
             const q = joints[i];
             let val = (p.type === 'r') ? (q * DEG2RAD) : q;
-            let offset = (p.type === 'r') ? (p.offset * DEG2RAD) : 0;
+            let offset = (p.offset * DEG2RAD);
             let alpha = p.alpha * DEG2RAD;
             let mat;
             if(p.type === 'r') mat = this.dhMatrix(val + offset, p.d, p.a, alpha);
@@ -415,37 +447,48 @@ const Robot = {
 
     solveIK: function(targetPos) {
         let q = [...this.targetJoints];
-        const lr = 0.5; const maxIter = 50;
+        const lr = 0.5; const maxIter = 100;
         for(let k=0; k<maxIter; k++) {
             const chain = this.forwardKinematics(q);
             const tcp = chain[chain.length-1].pos;
             const err = new THREE.Vector3().subVectors(targetPos, tcp);
-            if(err.length() < 0.01) break;
+            if(err.length() < 0.005) break;
+            
             for(let i=0; i<this.dh.length; i++) {
                 const p = this.dh[i];
                 const frame = chain[i];
                 const pivot = chain[i].pos;
-                const zAxis = new THREE.Vector3(0,0,1).applyMatrix4(chain[i].mat).sub(new THREE.Vector3(0,0,0).applyMatrix4(chain[i].mat)).normalize();
+                const zAxis = new THREE.Vector3(0,0,1).applyMatrix4(frame.mat).sub(new THREE.Vector3().setFromMatrixPosition(frame.mat)).normalize();
+                
                 let grad = 0;
                 if(p.type === 'r') {
                     const r = new THREE.Vector3().subVectors(tcp, pivot);
                     const cross = new THREE.Vector3().crossVectors(zAxis, r);
                     grad = cross.dot(err);
-                } else grad = zAxis.dot(err);
+                } else {
+                    grad = zAxis.dot(err);
+                }
                 q[i] += grad * lr;
             }
         }
-        q = q.map(v => { while(v > 180) v-=360; while(v < -180) v+=360; return v; });
-        this.targetJoints = q;
-        UI.updateSliders();
+        q = q.map((v, idx) => {
+            if(this.dh[idx].type === 'r') {
+                while(v > 180) v-=360; while(v < -180) v+=360; 
+                return clamp(v, this.dh[idx].min, this.dh[idx].max);
+            }
+            return clamp(v, this.dh[idx].min, this.dh[idx].max);
+        });
+        return q;
     },
 
     liveIK: function() {
         const x = parseFloat(document.getElementById('ik-x').value) || 0;
         const y = parseFloat(document.getElementById('ik-y').value) || 0;
         const z = parseFloat(document.getElementById('ik-z').value) || 0;
-        View.updateGhost(new THREE.Vector3(x,y,z));
-        this.solveIK(new THREE.Vector3(x,y,z));
+        const target = new THREE.Vector3(x,y,z);
+        View.updateGhost(target);
+        this.targetJoints = this.solveIK(target);
+        UI.updateSliders();
     },
 
     jogInterval: null,
@@ -456,7 +499,7 @@ const Robot = {
             let val = parseFloat(el.value) + amount;
             el.value = val.toFixed(2);
             this.liveIK();
-        }, 50);
+        }, 30);
     },
     stopJog: function() { clearInterval(this.jogInterval); },
 
@@ -483,9 +526,76 @@ const Robot = {
     }
 };
 
+const Hardware = {
+    port: null,
+    writer: null,
+    connected: false,
+    lastSync: 0,
+    syncInterval: 40, // ~25Hz for high responsiveness
+
+    async connect() {
+        if (!("serial" in navigator)) {
+            UI.notify("Web Serial API not supported in this browser.", "err");
+            return;
+        }
+        try {
+            this.port = await navigator.serial.requestPort();
+            const baud = parseInt(document.getElementById('baud-rate').value);
+            await this.port.open({ baudRate: baud });
+            this.writer = this.port.writable.getWriter();
+            this.connected = true;
+            this.updateUI(true);
+            UI.notify("Hardware Connected", "ok");
+        } catch (err) {
+            console.error(err);
+            UI.notify("Connection Failed", "err");
+        }
+    },
+
+    async disconnect() {
+        if (this.writer) { await this.writer.releaseLock(); this.writer = null; }
+        if (this.port) { await this.port.close(); this.port = null; }
+        this.connected = false;
+        this.updateUI(false);
+        UI.notify("Hardware Disconnected", "warn");
+    },
+
+    updateUI(isConnected) {
+        const dot = document.getElementById('hw-dot');
+        const text = document.getElementById('hw-status-text');
+        const btnConnect = document.getElementById('btn-hw-connect');
+        const btnDisconnect = document.getElementById('btn-hw-disconnect');
+        if (isConnected) {
+            dot.classList.add('connected');
+            text.innerText = "CONNECTED";
+            btnConnect.style.display = "none";
+            btnDisconnect.style.display = "block";
+        } else {
+            dot.classList.remove('connected');
+            text.innerText = "DISCONNECTED";
+            btnConnect.style.display = "block";
+            btnDisconnect.style.display = "none";
+        }
+    },
+
+    async sync(joints) {
+        if (!this.connected || !this.writer) return;
+        const now = Date.now();
+        if (now - this.lastSync < this.syncInterval) return;
+        try {
+            const data = joints.map(j => j.toFixed(2)).join(',') + '\n';
+            const encoder = new TextEncoder();
+            await this.writer.write(encoder.encode(data));
+            this.lastSync = now;
+        } catch (err) {
+            this.disconnect();
+        }
+    }
+};
+
 const View = {
     scene: null, camera: null, renderer: null, controls: null,
-    meshes: { parts: [], gripper: null, ghost: null, crate: null, trail: null, frames: [], fingers: [] },
+    meshes: { parts: [], gripper: null, ghost: null, trail: null, frames: [], fingers: [] },
     showFrames: false, recordingTrail: true,
     
     init: function() {
@@ -504,8 +614,8 @@ const View = {
         this.controls.enableDamping = true;
         this.controls.target.set(0, 0.5, 0);
         
-        this.buildEnvironment();
         this.buildMaterials();
+        this.buildEnvironment();
         window.addEventListener('resize', () => this.onResize());
         this.animate();
     },
@@ -521,21 +631,19 @@ const View = {
     buildEnvironment: function() {
         const grid = new THREE.GridHelper(20, 20, 0x333333, 0x111111);
         this.scene.add(grid);
-        const geo = new THREE.PlaneGeometry(50, 50);
-        const mat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.5 });
-        const floor = new THREE.Mesh(geo, mat);
+        const floorGeo = new THREE.PlaneGeometry(50, 50);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.5 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI/2; floor.position.y = -0.01; floor.receiveShadow = true;
         this.scene.add(floor);
         this.scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-        const spot = new THREE.SpotLight(0xff9100, 2);
-        spot.position.set(5, 8, 5); spot.castShadow = true; spot.shadow.bias = -0.0001;
+        const spot = new THREE.SpotLight(0xffffff, 1.5);
+        spot.position.set(5, 8, 5); spot.castShadow = true; spot.shadow.mapSize.width = 1024; spot.shadow.mapSize.height = 1024;
         this.scene.add(spot);
-        const rim = new THREE.PointLight(0x00e676, 0.5);
+        const rim = new THREE.PointLight(0xff9100, 0.5);
         rim.position.set(-5, 2, -5); this.scene.add(rim);
-        
         this.meshes.ghost = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), this.materials.ghost);
         this.scene.add(this.meshes.ghost);
-        
         const trailGeo = new THREE.BufferGeometry();
         const positions = new Float32Array(5000 * 3); 
         trailGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -547,51 +655,36 @@ const View = {
     },
 
     rebuildRobotModel: function() {
-        if (this.meshes.parts) this.meshes.parts.forEach(part => { if (part.mesh) this.scene.remove(part.mesh); });
+        if (this.meshes.parts) this.meshes.parts.forEach(p => this.scene.remove(p.mesh));
         if (this.meshes.frames) this.meshes.frames.forEach(f => this.scene.remove(f));
         if (this.meshes.gripper) this.scene.remove(this.meshes.gripper);
         this.meshes.parts = []; this.meshes.frames = [];
-
-        const baseFrame = new THREE.AxesHelper(0.15);
-        baseFrame.visible = this.showFrames;
-        this.scene.add(baseFrame);
-        this.meshes.frames.push(baseFrame);
-
+        const bf = new THREE.AxesHelper(0.15); bf.visible = this.showFrames;
+        this.scene.add(bf); this.meshes.frames.push(bf);
         for(let i=0; i<Robot.dh.length; i++) {
-            const p = Robot.dh[i];
-            const hubGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.15, 32);
+            const hubGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.12, 16);
             hubGeo.rotateX(Math.PI/2);
             const hub = new THREE.Mesh(hubGeo, this.materials.joint);
-            hub.castShadow = true;
-            this.scene.add(hub);
+            hub.castShadow = true; this.scene.add(hub);
             this.meshes.parts.push({ type:'joint', mesh:hub });
-            
-            const length = 1;
-            const armGeo = new THREE.BoxGeometry(0.08, 0.08, length);
-            armGeo.translate(0, 0, length/2); 
-            const arm = new THREE.Mesh(armGeo, this.materials.link);
-            arm.castShadow = true;
-            this.scene.add(arm);
-            this.meshes.parts.push({ type:'link', mesh:arm });
-
-            const axis = new THREE.AxesHelper(0.15);
-            axis.visible = this.showFrames;
-            this.scene.add(axis);
-            this.meshes.frames.push(axis);
+            const linkGeo = new THREE.BoxGeometry(0.06, 0.06, 1);
+            linkGeo.translate(0, 0, 0.5); 
+            const link = new THREE.Mesh(linkGeo, this.materials.link);
+            link.castShadow = true; this.scene.add(link);
+            this.meshes.parts.push({ type:'link', mesh:link });
+            const frame = new THREE.AxesHelper(0.15); frame.visible = this.showFrames;
+            this.scene.add(frame); this.meshes.frames.push(frame);
         }
-
-        const gripGroup = new THREE.Group();
-        const base = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.05), this.materials.body);
-        gripGroup.add(base);
-        const f1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.02), this.materials.joint);
-        f1.position.set(0.04, 0.1, 0);
-        gripGroup.add(f1);
-        const f2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.02), this.materials.joint);
-        f2.position.set(-0.04, 0.1, 0);
-        gripGroup.add(f2);
-        this.scene.add(gripGroup);
-        this.meshes.gripper = gripGroup;
-        this.meshes.fingers = [f1, f2];
+        const grip = new THREE.Group();
+        const base = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.04), this.materials.body);
+        grip.add(base);
+        const finger1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 0.02), this.materials.joint);
+        finger1.position.set(0.03, 0, 0.06); grip.add(finger1);
+        const finger2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 0.02), this.materials.joint);
+        finger2.position.set(-0.03, 0, 0.06); grip.add(finger2);
+        this.scene.add(grip);
+        this.meshes.gripper = grip;
+        this.meshes.fingers = [finger1, finger2];
     },
 
     updateGhost: function(pos) { if(this.meshes.ghost) this.meshes.ghost.position.copy(pos); },
@@ -600,42 +693,35 @@ const View = {
     toggleTrailRecord: function() { this.recordingTrail = !this.recordingTrail; UI.notify(this.recordingTrail ? "Path Recording ON" : "Path Recording PAUSED", "ok"); },
     clearTrail: function() { this.trailCount = 0; this.meshes.trail.geometry.setDrawRange(0, 0); },
 
-    trailIdx: 0, trailCount: 0,
+    trailCount: 0,
     updateVisuals: function(chain) {
-        if (this.meshes.frames[0]) {
-            this.meshes.frames[0].position.copy(chain[0].pos);
-            this.meshes.frames[0].quaternion.setFromRotationMatrix(chain[0].mat);
-        }
-
+        this.meshes.frames.forEach((f, i) => {
+            f.position.copy(chain[i].pos);
+            f.quaternion.setFromRotationMatrix(chain[i].mat);
+        });
         for(let i=0; i<Robot.dh.length; i++) {
             const start = chain[i].pos;
             const end = chain[i+1].pos;
-            
-            const hub = this.meshes.parts[i*2].mesh;
-            hub.position.copy(start);
-            hub.quaternion.setFromRotationMatrix(chain[i].mat);
-            
-            const arm = this.meshes.parts[i*2+1].mesh;
+            const jointMesh = this.meshes.parts[i*2].mesh;
+            jointMesh.position.copy(start);
+            jointMesh.quaternion.setFromRotationMatrix(chain[i].mat);
+            const linkMesh = this.meshes.parts[i*2+1].mesh;
             const dist = start.distanceTo(end);
             if(dist > 0.001) {
-                arm.visible = true; arm.position.copy(start); arm.lookAt(end); arm.scale.set(1, 1, dist);
-            } else arm.visible = false;
-
-            if (this.meshes.frames[i+1]) {
-                this.meshes.frames[i+1].position.copy(chain[i+1].pos);
-                this.meshes.frames[i+1].quaternion.setFromRotationMatrix(chain[i+1].mat);
-            }
+                linkMesh.visible = true;
+                linkMesh.position.copy(start);
+                linkMesh.lookAt(end);
+                linkMesh.scale.z = dist;
+            } else linkMesh.visible = false;
         }
-        
         const tcpFrame = chain[chain.length-1];
         if(this.meshes.gripper) {
             this.meshes.gripper.position.copy(tcpFrame.pos);
             this.meshes.gripper.quaternion.setFromRotationMatrix(tcpFrame.mat);
-            const gap = 0.04 + (Robot.gripper * 0.02);
+            const gap = 0.02 + (Robot.gripper * 0.02);
             this.meshes.fingers[0].position.x = gap;
             this.meshes.fingers[1].position.x = -gap;
         }
-        
         if(this.recordingTrail && this.trailCount < 5000) {
             const tcp = tcpFrame.pos;
             const positions = this.meshes.trail.geometry.attributes.position.array;
@@ -652,18 +738,20 @@ const View = {
                 this.meshes.trail.geometry.setDrawRange(0, this.trailCount);
             }
         }
-        
         Plotter.push(tcpFrame.pos.x, tcpFrame.pos.y, tcpFrame.pos.z);
         document.getElementById('hud-tcp').innerText = `${tcpFrame.pos.x.toFixed(2)}, ${tcpFrame.pos.y.toFixed(2)}, ${tcpFrame.pos.z.toFixed(2)}`;
     },
 
     animate: function() {
         requestAnimationFrame(() => this.animate());
-        let moving = false; let maxVel = 0;
+        let maxVel = 0;
         for(let i=0; i<Robot.joints.length; i++) {
             const diff = Robot.targetJoints[i] - Robot.joints[i];
+            // Increase interpolation speed to 0.4 for near-instant "simultaneous" feel
             if(Math.abs(diff) > 0.01) {
-                const step = diff * 0.15; Robot.joints[i] += step; maxVel = Math.max(maxVel, Math.abs(step)); moving = true;
+                const step = diff * 0.4; 
+                Robot.joints[i] += step; 
+                maxVel = Math.max(maxVel, Math.abs(step));
             } else Robot.joints[i] = Robot.targetJoints[i];
         }
         
@@ -674,12 +762,25 @@ const View = {
         
         Telemetry.push(maxVel);
         document.getElementById('hud-vel').innerText = (maxVel * 60).toFixed(1) + " deg/s";
+
+        // Sync hardware simultaneously with simulation movement
+        if (Hardware.connected) {
+            Hardware.sync(Robot.joints);
+        }
         
         if(Env.crate) {
             const tcp = chain[chain.length-1].pos;
             if(Robot.gripper > 0.8 && !Robot.holdingObject) {
-                if(tcp.distanceTo(Env.crate.position) < 0.2) { Robot.holdingObject = Env.crate; this.meshes.gripper.attach(Env.crate); }
-            } else if(Robot.gripper < 0.5 && Robot.holdingObject) { this.scene.attach(Env.crate); Robot.holdingObject = null; }
+                if(tcp.distanceTo(Env.crate.position) < 0.15) { 
+                    Robot.holdingObject = Env.crate; 
+                    this.meshes.gripper.attach(Env.crate); 
+                    UI.notify("Object Captured", "ok");
+                }
+            } else if(Robot.gripper < 0.5 && Robot.holdingObject) { 
+                this.scene.attach(Env.crate); 
+                Robot.holdingObject = null; 
+                UI.notify("Object Released", "warn");
+            }
         }
     },
     
@@ -693,14 +794,16 @@ const View = {
 
 const Plotter = {
     canvas: null, ctx: null, dataX: [], dataY: [], dataZ: [], paused: false,
-    init: function() { this.canvas = document.getElementById('plot-canvas'); if(!this.canvas) return; this.ctx = this.canvas.getContext('2d'); },
+    init: function() { 
+        this.canvas = document.getElementById('plot-canvas'); 
+        if(!this.canvas) return; 
+        this.ctx = this.canvas.getContext('2d'); 
+    },
     push: function(x, y, z) {
         if(this.paused) return;
         if(!this.ctx) this.init();
-        if(!this.ctx) return;
         this.dataX.push(x); this.dataY.push(y); this.dataZ.push(z);
-        const maxLen = 200;
-        if(this.dataX.length > maxLen) { this.dataX.shift(); this.dataY.shift(); this.dataZ.shift(); }
+        if(this.dataX.length > 200) { this.dataX.shift(); this.dataY.shift(); this.dataZ.shift(); }
         this.draw();
     },
     togglePause: function() { this.paused = !this.paused; },
@@ -709,15 +812,21 @@ const Plotter = {
         const cvs = this.canvas; const ctx = this.ctx;
         if(cvs.width !== cvs.offsetWidth || cvs.height !== cvs.offsetHeight) { cvs.width = cvs.offsetWidth; cvs.height = cvs.offsetHeight; }
         const w = cvs.width; const h = cvs.height;
-        ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0,0,w,h);
+        ctx.fillStyle = '#050505'; ctx.fillRect(0,0,w,h);
         ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
-        this.drawSeries(this.dataX, '#ff4444', w, h); this.drawSeries(this.dataY, '#44ff44', w, h); this.drawSeries(this.dataZ, '#4444ff', w, h);
+        this.drawSeries(this.dataX, '#ff4444', w, h); 
+        this.drawSeries(this.dataY, '#44ff44', w, h); 
+        this.drawSeries(this.dataZ, '#4444ff', w, h);
     },
     drawSeries: function(data, color, w, h) {
         if(data.length < 2) return;
         const ctx = this.ctx; ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
         const scale = h/4; const mid = h/2; const step = w / 200;
-        for(let i=0; i<data.length; i++) { const x = i * step; const y = mid - (data[i] * scale); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+        for(let i=0; i<data.length; i++) { 
+            const x = i * step; 
+            const y = mid - (data[i] * scale); 
+            if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); 
+        }
         ctx.stroke();
     }
 };
@@ -727,8 +836,9 @@ const AI = {
         const prompt = document.getElementById('ai-prompt').value;
         if(!prompt) return UI.notify("Please enter a command", "err");
         UI.notify("Consulting Gemini...", "warn");
-        const cratePos = Env.crate ? `${Env.crate.position.x.toFixed(2)}, ${Env.crate.position.y.toFixed(2)}, ${Env.crate.position.z.toFixed(2)}` : "Unknown";
-        const systemPrompt = `You are an expert industrial robot programmer for the RevoLab simulator. Translate natural language to "RevoScript". Context: Base at 0,0,0. Crate at [${cratePos}]. Syntax: MOVE x y z, GRIP 1/0, WAIT ms, HOME, SPEED val.`;
+        const cratePos = Env.crate ? `${Env.crate.position.x.toFixed(2)}, ${Env.crate.position.y.toFixed(2)}, ${Env.crate.position.z.toFixed(2)}` : "None";
+        const systemPrompt = `You are a robotic programming assistant. Convert the user command into RevoScript. Base at [0,0,0]. Crate at [${cratePos}].
+        Syntax: SPEED <0-100>, MOVE <x> <y> <z>, GRIP <0|1>, WAIT <ms>, HOME. Code ONLY.`;
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -740,25 +850,41 @@ const AI = {
                 code = code.replace(/```(revo|script)?/gi, '').replace(/```/g, '').trim();
                 document.getElementById('script-area').value = "// Generated by Gemini ✨\n" + code;
                 UI.notify("Script Generated!", "ok"); UI.switchTab('script');
-            } else throw new Error("No code");
-        } catch (e) { console.error(e); UI.notify("AI Request Failed", "err"); }
+            } else throw new Error();
+        } catch (e) { UI.notify("API Offline", "err"); }
     }
 };
 
 const Script = {
     running: false, lines: [], pc: 0,
-    run: function() { if(this.running) return; this.lines = document.getElementById('script-area').value.split('\n'); this.pc = 0; this.running = true; UI.notify("Script Started", "ok"); this.step(); },
-    stop: function() { this.running = false; UI.notify("Script Stopped", "err"); },
+    run: function() { 
+        if(this.running) return; 
+        this.lines = document.getElementById('script-area').value.split('\n'); 
+        this.pc = 0; this.running = true; 
+        UI.notify("Script Started", "ok"); 
+        this.step(); 
+    },
+    stop: function() { this.running = false; UI.notify("Script Halted", "err"); },
     step: function() {
         if(!this.running || this.pc >= this.lines.length) { this.running = false; return; }
         const line = this.lines[this.pc].trim(); this.pc++;
         if(!line || line.startsWith('//')) { this.step(); return; }
         const parts = line.split(/\s+/); const cmd = parts[0].toUpperCase();
         switch(cmd) {
-            case 'MOVE': const x = parseFloat(parts[1]), y = parseFloat(parts[2]), z = parseFloat(parts[3]); Robot.targetJoints = Robot.solveIK(new THREE.Vector3(x,y,z)) || Robot.targetJoints; View.updateGhost(new THREE.Vector3(x,y,z)); setTimeout(() => this.step(), 1000); break;
+            case 'MOVE': 
+                const x = parseFloat(parts[1]), y = parseFloat(parts[2]), z = parseFloat(parts[3]);
+                Robot.targetJoints = Robot.solveIK(new THREE.Vector3(x,y,z));
+                View.updateGhost(new THREE.Vector3(x,y,z));
+                UI.updateSliders();
+                setTimeout(() => this.step(), 1000); 
+                break;
             case 'WAIT': setTimeout(() => this.step(), parseInt(parts[1])); break;
-            case 'GRIP': Robot.setGripper(parseFloat(parts[1])); setTimeout(() => this.step(), 500); break;
-            case 'HOME': Robot.targetJoints = new Array(Robot.dh.length).fill(0); setTimeout(() => this.step(), 1000); break;
+            case 'GRIP': Robot.setGripper(parseFloat(parts[1])); setTimeout(() => this.step(), 400); break;
+            case 'HOME': 
+                Robot.targetJoints = new Array(Robot.dh.length).fill(0); 
+                UI.updateSliders();
+                setTimeout(() => this.step(), 1000); 
+                break;
             default: this.step();
         }
     }
@@ -768,15 +894,18 @@ const Env = {
     crate: null, tent: null,
     spawnCrate: function() {
         if(this.crate) View.scene.remove(this.crate);
-        const geo = new THREE.BoxGeometry(0.15, 0.15, 0.15); const mat = new THREE.MeshStandardMaterial({ color: 0xff9100, roughness: 0.5 });
-        this.crate = new THREE.Mesh(geo, mat); this.crate.position.set(1.0, 0.075, 0.5); this.crate.castShadow = true; View.scene.add(this.crate);
+        const geo = new THREE.BoxGeometry(0.12, 0.12, 0.12); 
+        const mat = new THREE.MeshStandardMaterial({ color: 0xff9100, roughness: 0.5 });
+        this.crate = new THREE.Mesh(geo, mat); this.crate.position.set(1.0, 0.06, 0.5); 
+        this.crate.castShadow = true; View.scene.add(this.crate);
+        UI.notify("Crate Spawned", "ok");
     },
     toggleWorkspace: function() {
         if(this.tent) { View.scene.remove(this.tent); this.tent = null; return; }
-        UI.notify("Generating Smooth Hull...", "warn");
+        UI.notify("Calculating Work Volume...", "warn");
         setTimeout(() => {
             const points = [];
-            for(let i=0; i<3500; i++) {
+            for(let i=0; i<3000; i++) {
                 const q = Robot.dh.map(p => (Math.random()*(p.max-p.min) + p.min));
                 const chain = Robot.forwardKinematics(q);
                 const pos = chain[chain.length-1].pos;
@@ -784,8 +913,9 @@ const Env = {
             }
             if(points.length > 4) {
                 const geom = new THREE.ConvexGeometry(points); geom.computeVertexNormals();
-                const mat = new THREE.MeshPhongMaterial({ color: 0xff9100, transparent: true, opacity: 0.15, side: THREE.DoubleSide, shininess: 90, specular: 0xffffff, flatShading: false });
-                this.tent = new THREE.Mesh(geom, mat); View.scene.add(this.tent); UI.notify("Workspace Generated", "ok");
+                const mat = new THREE.MeshPhongMaterial({ color: 0xff9100, transparent: true, opacity: 0.1, side: THREE.DoubleSide });
+                this.tent = new THREE.Mesh(geom, mat); View.scene.add(this.tent); 
+                UI.notify("Hull Generated", "ok");
             }
         }, 50);
     }
@@ -795,8 +925,8 @@ const UI = {
     switchTab: function(id) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        if(window.event && window.event.target.classList.contains('tab-btn')) window.event.target.classList.add('active');
-        else document.querySelector('.tab-btn').classList.add('active');
+        const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.innerText.toLowerCase() === id);
+        if(btn) btn.classList.add('active');
         document.getElementById(`tab-${id}`).classList.add('active');
         if(id === 'code') CodeGen.generate();
     },
@@ -804,20 +934,25 @@ const UI = {
         const tbody = document.querySelector('#dh-table tbody'); tbody.innerHTML = '';
         Robot.dh.forEach((p, i) => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${p.type.toUpperCase()}</td><td><input type="number" value="${p.d}" onchange="Robot.dh[${i}].d=parseFloat(this.value); View.rebuildRobotModel()"></td><td><input type="number" value="${p.a}" onchange="Robot.dh[${i}].a=parseFloat(this.value); View.rebuildRobotModel()"></td><td><input type="number" value="${p.alpha}" onchange="Robot.dh[${i}].alpha=parseFloat(this.value); View.rebuildRobotModel()"></td><td><input type="number" value="${p.offset}" onchange="Robot.dh[${i}].offset=parseFloat(this.value)"></td>`;
+            tr.innerHTML = `<td>${p.type.toUpperCase()}</td><td><input type="number" value="${p.d}" onchange="Robot.dh[${i}].d=parseFloat(this.value); Robot.rebuild()"></td><td><input type="number" value="${p.a}" onchange="Robot.dh[${i}].a=parseFloat(this.value); Robot.rebuild()"></td><td><input type="number" value="${p.alpha}" onchange="Robot.dh[${i}].alpha=parseFloat(this.value); Robot.rebuild()"></td><td><input type="number" value="${p.offset}" onchange="Robot.dh[${i}].offset=parseFloat(this.value)"></td>`;
             tbody.appendChild(tr);
         });
     },
     buildSliders: function() {
         const div = document.getElementById('joint-sliders'); div.innerHTML = '';
         Robot.dh.forEach((p, i) => {
-            const row = document.createElement('div'); row.className = 'input-group';
-            row.innerHTML = `<div class="row"><label>J${i+1}</label><span style="font-size:10px; color:#ff9100" id="val-j${i}">0°</span></div><input type="range" min="${p.min}" max="${p.max}" value="0" oninput="Robot.targetJoints[${i}]=parseFloat(this.value); document.getElementById('val-j${i}').innerText=this.value+'°'">`;
+            const row = document.createElement('div'); row.className = 'control-section'; row.style.padding = '10px';
+            row.innerHTML = `<div class="row"><label>Joint ${i+1}</label><span style="font-size:10px; color:#ff9100" id="val-j${i}">0°</span></div><input type="range" min="${p.min}" max="${p.max}" value="0" step="0.5" oninput="Robot.targetJoints[${i}]=parseFloat(this.value); document.getElementById('val-j${i}').innerText=this.value+'°'">`;
             div.appendChild(row);
         });
     },
     updateSliders: function() {
-        Robot.targetJoints.forEach((v, i) => { const el = document.querySelector(`#joint-sliders input:nth-of-type(${i+1})`); });
+        Robot.targetJoints.forEach((v, i) => { 
+            const slider = document.querySelector(`#joint-sliders .control-section:nth-of-type(${i+1}) input`);
+            if(slider) slider.value = v;
+            const valLabel = document.getElementById(`val-j${i}`);
+            if(valLabel) valLabel.innerText = Math.round(v) + '°';
+        });
     },
     notify: function(msg, type) {
         const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
@@ -830,10 +965,11 @@ const Telemetry = {
     data: [],
     push: function(val) { this.data.push(val); if(this.data.length > 200) this.data.shift(); this.draw(); },
     draw: function() {
-        const cvs = document.getElementById('telemetry'); const ctx = cvs.getContext('2d');
+        const cvs = document.getElementById('telemetry'); if(!cvs) return;
+        const ctx = cvs.getContext('2d');
         const w = cvs.width = cvs.offsetWidth; const h = cvs.height = cvs.offsetHeight;
-        ctx.fillStyle = '#0f0f0f'; ctx.fillRect(0,0,w,h); ctx.strokeStyle = '#ff9100'; ctx.lineWidth = 2; ctx.beginPath();
-        for(let i=0; i<this.data.length; i++) { const x = (i/200)*w; const y = h - (this.data[i] * h * 5); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+        ctx.fillStyle = '#0f0f0f'; ctx.fillRect(0,0,w,h); ctx.strokeStyle = '#ff9100'; ctx.lineWidth = 1.5; ctx.beginPath();
+        for(let i=0; i<this.data.length; i++) { const x = (i/200)*w; const y = h - (this.data[i] * h * 6); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
         ctx.stroke();
     }
 };
@@ -845,17 +981,17 @@ const CodeGen = {
         document.getElementById('export-area').value = txt;
     },
     copy: function() { document.getElementById('export-area').select(); document.execCommand('copy'); UI.notify("Code Copied", "ok"); },
-    cpp: function() { return `// ARC Driver C++\nstruct Config {\n` + Robot.dh.map(p => `  {${p.d}, ${p.a}, ${p.alpha}, ${p.offset}}`).join(',\n') + `\n};\n\nvoid solveIK(float x, float y, float z) { ... }`; },
-    py: function() { return `import numpy as np\n\ndh_params = [\n` + Robot.dh.map(p => `    {'d':${p.d}, 'a':${p.a}, 'alpha':${p.alpha}}`).join(',\n') + `\n]\n\ndef inverse_kinematics(target):\n    pass`; }
+    cpp: function() { return `// ARC Driver C++\nconst float dh[${Robot.dh.length}][4] = {\n` + Robot.dh.map(p => `  {${p.d}, ${p.a}, ${p.alpha}, ${p.offset}}`).join(',\n') + `\n};`; },
+    py: function() { return `import numpy as np\ndh = [\n` + Robot.dh.map(p => `    [${p.d}, ${p.a}, ${p.alpha}, ${p.offset}]`).join(',\n') + `\n]`; }
 };
 
 const Sim = {
-    loadPreset: function(p) { Robot.init(p); },
+    loadPreset: function(p) { Robot.init(p); UI.notify(`Loaded ${p.toUpperCase()}`, "ok"); },
     resetCamera: function() { View.controls.reset(); },
     hardReset: function() { location.reload(); }
 };
 
-window.onload = function() { View.init(); Robot.init('simple'); };
+window.onload = function() { View.init(); Robot.init('simple'); Env.spawnCrate(); };
 </script>
 </body>
 </html>
