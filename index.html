@@ -10,6 +10,9 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/ConvexHull.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/ConvexGeometry.js"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
         :root {
@@ -32,7 +35,7 @@
 
         * { box-sizing: border-box; user-select: none; }
 
-        body { margin: 0; background-color: var(--bg-app); color: var(--text-main); font-family: var(--font-ui); overflow: hidden; height: 100vh; display: flex; }
+        body { margin: 0; background-color: var(--bg-app); color: var(--text-main); font-family: var(--font-ui); overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
 
         /* Loader Styles */
         #loader {
@@ -92,29 +95,201 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 
-        #app-container { display: flex; width: 100%; height: 100%; opacity: 0; transition: opacity 1s ease; }
+        /* Main Container: Column for Toolbar + Viewport */
+        #app-container { display: flex; flex-direction: column; width: 100%; height: 100%; opacity: 0; transition: opacity 1s ease; }
         #app-container.visible { opacity: 1; }
 
-        #sidebar { width: 420px; background-color: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 10; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
-        #viewport { flex-grow: 1; position: relative; background: radial-gradient(circle at center, #1a1a1a 0%, #000000 120%); overflow: hidden; }
+        /* --- TOP TOOLBAR --- */
+        #top-bar {
+            height: 48px;
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            z-index: 20;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            justify-content: space-between;
+        }
 
-        /* Components */
-        .header { padding: 20px; border-bottom: 1px solid var(--border-color); background: linear-gradient(180deg, #1a1a1a 0%, var(--bg-panel) 100%); }
-        .header h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 2px; color: var(--accent-primary); text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
-        .header h1::before { content: ''; display: block; width: 12px; height: 12px; background: var(--accent-primary); box-shadow: 0 0 10px var(--accent-primary); border-radius: 50%; }
-        .header h2 { margin: 5px 0 0 22px; font-size: 11px; color: var(--text-muted); letter-spacing: 1px; font-weight: 400; }
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-logo h1 { 
+            margin: 0; font-size: 16px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); text-transform: uppercase; display: flex; align-items: center; gap: 8px; 
+        }
+        .header-logo h1 span {
+            font-size: 9px; opacity: 0.5; font-weight: 400; border: 1px solid #555; padding: 1px 3px; border-radius: 3px;
+        }
+        .header-logo h1::before { content: ''; display: block; width: 10px; height: 10px; background: var(--accent-primary); box-shadow: 0 0 8px var(--accent-primary); border-radius: 50%; }
 
-        .tabs { display: flex; background: #0f0f0f; border-bottom: 1px solid var(--border-color); }
-        .tab-btn { flex: 1; padding: 15px 0; background: transparent; border: none; color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; border-bottom: 2px solid transparent; }
-        .tab-btn:hover { color: var(--text-main); background: #1a1a1a; }
-        .tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); background: var(--accent-dim); }
+        .toolbar-tabs {
+            display: flex;
+            gap: 8px;
+            height: 100%;
+            align-items: center;
+        }
 
-        .tab-content { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
-        .panel { display: none; padding: 20px; animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            font-size: 20px; /* Icon size */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+        .tab-btn.active { 
+            color: var(--accent-primary); 
+            background: var(--accent-dim); 
+            border-color: rgba(255, 145, 0, 0.3);
+        }
+        
+        /* Tooltip hack for icons */
+        .tab-btn::after {
+            content: attr(data-title);
+            position: absolute;
+            top: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #222;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            border: 1px solid #444;
+            z-index: 100;
+        }
+        .tab-btn:hover::after { opacity: 1; }
+
+        /* --- MAIN AREA --- */
+        #main-area {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+        }
+
+        #viewport { 
+            width: 100%; 
+            height: 100%; 
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 120%); 
+        }
+
+        /* --- SIDEBAR TOOLS PANEL (Rigid) --- */
+        #tools-panel-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 340px;
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border-color);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(0);
+        }
+        
+        #tools-panel-container.collapsed {
+            transform: translateX(-100%);
+        }
+
+        #panel-header {
+            height: 40px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .panel-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+        .panel-close-btn:hover { color: var(--accent-primary); }
+
+        /* Floating Open Button */
+        #side-toggle-btn {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-left: none;
+            color: var(--text-muted);
+            width: 24px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 9;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            transition: opacity 0.3s, transform 0.2s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #side-toggle-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #side-toggle-btn.visible:hover {
+            color: var(--accent-primary);
+            width: 28px;
+        }
+
+        .panel-scroll-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 5px;
+        }
+        
+        /* Hide Scrollbar for sleekness */
+        .panel-scroll-area::-webkit-scrollbar { width: 4px; }
+        .panel-scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .panel-scroll-area::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+        .panel { display: none; padding: 10px; animation: fadeIn 0.3s; }
         .panel.active { display: block; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .control-section { background: #181818; border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; margin-bottom: 15px; }
+        .control-section { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; margin-bottom: 15px; }
         .section-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
 
         .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
@@ -157,13 +332,13 @@
         canvas#plot-canvas { width: 100%; height: 100px; background: #000; border-radius: 2px; border: 1px solid #333; display: block; }
 
         /* HUD */
-        #hud-container { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none; }
+        #hud-container { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none; z-index: 5; }
         .hud-panel { background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(8px); border-left: 2px solid var(--accent-primary); padding: 10px 15px; border-radius: 0 4px 4px 0; min-width: 180px; }
         .hud-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .hud-value { font-family: var(--font-mono); font-size: 14px; color: var(--text-highlight); font-weight: 700; }
         .hud-value.accent { color: var(--accent-primary); }
 
-        #toast-area { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        #toast-area { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 100; }
         .toast { background: #1a1a1a; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 12px; border: 1px solid var(--border-color); box-shadow: 0 5px 20px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateY(10px); animation: popIn 0.3s forwards; }
         @keyframes popIn { to { opacity: 1; transform: translateY(0); } }
 
@@ -183,7 +358,7 @@
         <div class="logo-ring"></div>
         <div class="logo-ring"></div>
         <!-- Replace src with your custom logo file path -->
-        <img src="assets/LOGO-01-01.png" class="logo-img" alt="Logo">
+        <img src="assets/LOGO-01-01.png" class="logo-img" alt="Logo" onerror="this.style.display='none'">
     </div>
     <div class="loader-bar-bg">
         <div class="loader-bar-fill" id="loader-fill"></div>
@@ -192,173 +367,207 @@
 </div>
 
 <div id="app-container">
-    <div id="sidebar">
-        <div class="header">
-            <h1>RevoLab <span style="font-size:10px; opacity:0.5; font-weight:400; border:1px solid #555; padding:2px 4px; border-radius:3px;">V5.2</span></h1>
-            <h2>Advanced Robotics Core</h2>
+    
+    <!-- TOP TOOLBAR -->
+    <div id="top-bar">
+        <div class="header-logo">
+            <h1>RevoLab <span>V5.2</span></h1>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="UI.switchTab('setup')">Setup</button>
-            <button class="tab-btn" onclick="UI.switchTab('control')">Control</button>
-            <button class="tab-btn" onclick="UI.switchTab('script')">Script</button>
-            <button class="tab-btn" onclick="UI.switchTab('ros')">ROS</button>
+        <div class="toolbar-tabs">
+            <button class="tab-btn active" onclick="UI.switchTab('setup')" data-title="Setup">
+                <i class="ph ph-gear"></i>
+            </button>
+            <button class="tab-btn" onclick="UI.switchTab('control')" data-title="Control">
+                <i class="ph ph-game-controller"></i>
+            </button>
+            <button class="tab-btn" onclick="UI.switchTab('script')" data-title="Script">
+                <i class="ph ph-code"></i>
+            </button>
+            <button class="tab-btn" onclick="UI.switchTab('ros')" data-title="ROS">
+                <i class="ph ph-network"></i>
+            </button>
         </div>
+        
+        <div style="width: 100px;"> <!-- Spacer to balance layout if needed --> </div>
+    </div>
 
-        <!-- SETUP -->
-        <div id="tab-setup" class="tab-content panel active">
-            <div class="control-section">
-                <div class="section-title">Robot Architecture</div>
-                <div class="input-group">
-                    <label style="display:block; margin-bottom:5px;">Hardware Preset</label>
-                    <select id="preset-sel" onchange="Sim.loadPreset(this.value)">
-                        <option value="simple" selected>Simple 3-DOF</option>
-                        <option value="ur5">UR5 (Cobot)</option>
-                        <option value="scara">SCARA (Pick & Place)</option>
-                    </select>
-                </div>
-                 <div class="btn-grid">
-                    <button class="danger" onclick="Sim.hardReset()">Hard Reset</button>
-                 </div>
+    <!-- MAIN AREA -->
+    <div id="main-area">
+        
+        <!-- SIDEBAR TOOLS PANEL (Rigid) -->
+        <div id="tools-panel-container">
+            <!-- Header with Close Button -->
+            <div id="panel-header">
+                <span class="panel-title">Properties</span>
+                <button class="panel-close-btn" onclick="UI.togglePanel(false)" title="Collapse Panel">
+                    <i class="ph ph-caret-double-left"></i>
+                </button>
             </div>
 
-            <div class="control-section">
-                <div class="section-title">
-                    <span>DH Parameters</span>
-                    <span style="font-size:9px; color:#555">Modified Denavit-Hartenberg</span>
-                </div>
-                <table id="dh-table">
-                    <thead>
-                        <tr>
-                            <th title="Joint Type">Type</th>
-                            <th title="Link Offset">d</th>
-                            <th title="Link Length">a</th>
-                            <th title="Link Twist">&alpha;</th>
-                            <th title="Joint Offset">Off</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                <div class="btn-grid tri" style="margin-top:10px;">
-                    <button onclick="Robot.addLink()">+</button>
-                    <button onclick="Robot.removeLink()">-</button>
-                    <button class="primary" onclick="Robot.rebuild()">Apply</button>
-                </div>
-            </div>
+            <!-- Scrollable Content Area -->
+            <div class="panel-scroll-area">
+                
+                <!-- SETUP -->
+                <div id="tab-setup" class="tab-content panel active">
+                    <div class="control-section">
+                        <div class="section-title">Robot Architecture</div>
+                        <div class="input-group">
+                            <label style="display:block; margin-bottom:5px;">Hardware Preset</label>
+                            <select id="preset-sel" onchange="Sim.loadPreset(this.value)">
+                                <option value="simple" selected>Simple 3-DOF</option>
+                                <option value="ur5">UR5 (Cobot)</option>
+                            </select>
+                        </div>
+                         <div class="btn-grid">
+                            <button class="danger" onclick="Sim.hardReset()">Hard Reset</button>
+                            <button class="primary" onclick="document.getElementById('urdf-input').click()">Import URDF</button>
+                            <input type="file" id="urdf-input" style="display:none" accept=".urdf,.xml" onchange="URDF.handleFile(this)">
+                         </div>
+                    </div>
 
-            <div class="control-section">
-                <div class="section-title">View & Environment</div>
-                <div class="row">
-                    <label>Camera</label>
-                    <button onclick="Sim.resetCamera()">Reset View</button>
-                </div>
-                <div class="row">
-                    <label>Workspace</label>
-                    <button onclick="Env.toggleWorkspace()">Generate 3D Hull</button>
-                </div>
-                <div class="row">
-                    <label>Visuals</label>
-                    <button onclick="View.toggleFrames()">Toggle Joint Frames</button>
-                </div>
-            </div>
-            
-            <div class="control-section">
-                <div class="section-title">Appearance</div>
-                <div class="row">
-                    <label>Joint Color</label>
-                    <input type="color" value="#ff9100" oninput="View.updateColor('joint', this.value)">
-                </div>
-                <div class="row">
-                    <label>Link Color</label>
-                    <input type="color" value="#444444" oninput="View.updateColor('link', this.value)">
-                </div>
-            </div>
-        </div>
+                    <div class="control-section" id="dh-section">
+                        <div class="section-title">
+                            <span>DH Parameters</span>
+                            <span style="font-size:9px; color:#555">Modified Denavit-Hartenberg</span>
+                        </div>
+                        <div style="overflow-x:auto">
+                            <table id="dh-table">
+                                <thead>
+                                    <tr>
+                                        <th title="Joint Type">Type</th>
+                                        <th title="Link Offset">d</th>
+                                        <th title="Link Length">a</th>
+                                        <th title="Link Twist">&alpha;</th>
+                                        <th title="Joint Offset">Off</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="btn-grid tri" style="margin-top:10px;">
+                            <button onclick="Robot.addLink()">+</button>
+                            <button onclick="Robot.removeLink()">-</button>
+                            <button class="primary" onclick="Robot.rebuild()">Apply</button>
+                        </div>
+                    </div>
 
-        <!-- CONTROL -->
-        <div id="tab-control" class="tab-content panel">
-            <div class="control-section">
-                <div class="section-title">Inverse Kinematics</div>
-                <div class="row">
-                    <input type="number" id="ik-x" placeholder="X" value="1.0" step="0.1" oninput="Robot.liveIK()">
-                    <input type="number" id="ik-y" placeholder="Y" value="1.0" step="0.1" oninput="Robot.liveIK()">
-                    <input type="number" id="ik-z" placeholder="Z" value="0.5" step="0.1" oninput="Robot.liveIK()">
+                    <div class="control-section">
+                        <div class="section-title">View & Environment</div>
+                        <div class="row">
+                            <label>Camera</label>
+                            <button onclick="Sim.resetCamera()">Reset View</button>
+                        </div>
+                        <div class="row">
+                            <label>Workspace</label>
+                            <button onclick="Env.toggleWorkspace()">Generate 3D Hull</button>
+                        </div>
+                        <div class="row">
+                            <label>Visuals</label>
+                            <button onclick="View.toggleFrames()">Toggle Joint Frames</button>
+                        </div>
+                    </div>
+                    
+                    <div class="control-section">
+                        <div class="section-title">Appearance</div>
+                        <div class="row">
+                            <label>Joint Color</label>
+                            <input type="color" value="#ff9100" oninput="View.updateColor('joint', this.value)">
+                        </div>
+                        <div class="row">
+                            <label>Link Color</label>
+                            <input type="color" value="#444444" oninput="View.updateColor('link', this.value)">
+                        </div>
+                    </div>
                 </div>
-                <div class="btn-grid tri" style="margin-top:10px;">
-                    <button onmousedown="Robot.startJog('x', 0.05)" onmouseup="Robot.stopJog()">X+</button>
-                    <button onmousedown="Robot.startJog('y', 0.05)" onmouseup="Robot.stopJog()">Y+</button>
-                    <button onmousedown="Robot.startJog('z', 0.05)" onmouseup="Robot.stopJog()">Z+</button>
-                    <button onmousedown="Robot.startJog('x', -0.05)" onmouseup="Robot.stopJog()">X-</button>
-                    <button onmousedown="Robot.startJog('y', -0.05)" onmouseup="Robot.stopJog()">Y-</button>
-                    <button onmousedown="Robot.startJog('z', -0.05)" onmouseup="Robot.stopJog()">Z-</button>
-                </div>
-            </div>
 
-            <div class="control-section">
-                <div class="section-title">Joint Override</div>
-                <div id="joint-sliders"></div>
-            </div>
+                <!-- CONTROL -->
+                <div id="tab-control" class="tab-content panel">
+                    <div class="control-section">
+                        <div class="section-title">Inverse Kinematics</div>
+                        <div class="row" id="ik-controls">
+                            <input type="number" id="ik-x" placeholder="X" value="1.0" step="0.1" oninput="Robot.liveIK()">
+                            <input type="number" id="ik-y" placeholder="Y" value="1.0" step="0.1" oninput="Robot.liveIK()">
+                            <input type="number" id="ik-z" placeholder="Z" value="0.5" step="0.1" oninput="Robot.liveIK()">
+                        </div>
+                        <div class="btn-grid tri" style="margin-top:10px;" id="jog-controls">
+                            <button onmousedown="Robot.startJog('x', 0.05)" onmouseup="Robot.stopJog()">X+</button>
+                            <button onmousedown="Robot.startJog('y', 0.05)" onmouseup="Robot.stopJog()">Y+</button>
+                            <button onmousedown="Robot.startJog('z', 0.05)" onmouseup="Robot.stopJog()">Z+</button>
+                            <button onmousedown="Robot.startJog('x', -0.05)" onmouseup="Robot.stopJog()">X-</button>
+                            <button onmousedown="Robot.startJog('y', -0.05)" onmouseup="Robot.stopJog()">Y-</button>
+                            <button onmousedown="Robot.startJog('z', -0.05)" onmouseup="Robot.stopJog()">Z-</button>
+                        </div>
+                        <div id="urdf-ik-warning" style="display:none; color:var(--text-muted); font-size:10px; margin-top:10px; text-align:center;">
+                            IK Solver disabled in URDF mode. Use sliders for FK.
+                        </div>
+                    </div>
 
-            <div class="control-section">
-                <div class="section-title">End Effector</div>
-                <div class="row">
-                    <label>Gripper</label>
-                    <input type="range" min="0" max="1" step="0.01" value="0" oninput="Robot.setGripper(this.value)">
-                </div>
-            </div>
+                    <div class="control-section">
+                        <div class="section-title">Joint Override</div>
+                        <div id="joint-sliders"></div>
+                    </div>
 
-            <div class="control-section">
-                <div class="section-title">
-                    <span>Hardware Connection</span>
-                    <span id="serial-status" style="font-size:9px; color:var(--text-muted)">DISCONNECTED</span>
-                </div>
-                <div class="row">
-                    <label>USB Port</label>
-                    <button id="btn-connect" class="primary" onclick="Serial.connect()">Connect Device</button>
-                    <button id="btn-disconnect" class="danger" onclick="Serial.disconnect()" style="display:none">Disconnect</button>
-                </div>
-                <div class="row">
-                    <label>Baud Rate</label>
-                    <select id="baud-rate">
-                        <option value="9600">9600</option>
-                        <option value="115200" selected>115200</option>
-                        <option value="57600">57600</option>
-                        <option value="38400">38400</option>
-                    </select>
-                </div>
-                <div style="margin-top:10px; padding:8px; background:rgba(0,0,0,0.3); border-radius:4px; font-family:var(--font-mono); font-size:10px; color:#666;">
-                    Protocol: J1,J2,J3,J4,J5,J6,Grip\n<br>
-                    Example: 90.0,45.5,0.0,0.0,0.0,0.0,1.0
-                </div>
-            </div>
+                    <div class="control-section">
+                        <div class="section-title">End Effector</div>
+                        <div class="row">
+                            <label>Gripper</label>
+                            <input type="range" min="0" max="1" step="0.01" value="0" oninput="Robot.setGripper(this.value)">
+                        </div>
+                    </div>
 
-            <div class="control-section">
-                <div class="section-title">Driver Export</div>
-                <div class="input-group">
-                    <select id="code-lang" onchange="CodeGen.generate()">
-                        <option value="cpp">C++ (Embedded/Arduino)</option>
-                        <option value="python">Python (NumPy)</option>
-                    </select>
-                </div>
-                <div class="editor-wrapper">
-                    <textarea id="export-area" class="code-area" readonly></textarea>
-                </div>
-                <button class="primary" style="margin-top:10px;" onclick="CodeGen.copy()">Copy to Clipboard</button>
-            </div>
-        </div>
+                    <div class="control-section">
+                        <div class="section-title">
+                            <span>Hardware Connection</span>
+                            <span id="serial-status" style="font-size:9px; color:var(--text-muted)">DISCONNECTED</span>
+                        </div>
+                        <div class="row">
+                            <label>USB Port</label>
+                            <button id="btn-connect" class="primary" onclick="Serial.connect()">Connect Device</button>
+                            <button id="btn-disconnect" class="danger" onclick="Serial.disconnect()" style="display:none">Disconnect</button>
+                        </div>
+                        <div class="row">
+                            <label>Baud Rate</label>
+                            <select id="baud-rate">
+                                <option value="9600">9600</option>
+                                <option value="115200" selected>115200</option>
+                                <option value="57600">57600</option>
+                                <option value="38400">38400</option>
+                            </select>
+                        </div>
+                        <div style="margin-top:10px; padding:8px; background:rgba(0,0,0,0.3); border-radius:4px; font-family:var(--font-mono); font-size:10px; color:#666;">
+                            Protocol: J1,J2,J3,J4,J5,J6,Grip\n<br>
+                            Example: 90.0,45.5,0.0,0.0,0.0,0.0,1.0
+                        </div>
+                    </div>
 
-        <!-- SCRIPT -->
-        <div id="tab-script" class="tab-content panel">
-            <div class="control-section" style="border-color: var(--accent-primary);">
-                <div class="section-title" style="color: var(--accent-primary);">✨ Gemini Copilot</div>
-                <input type="text" id="ai-prompt" placeholder="e.g., Pick up the crate and stack it at x=0">
-                <button class="primary" onclick="AI.generateScript()">Generate RevoScript ✨</button>
-            </div>
+                    <div class="control-section">
+                        <div class="section-title">Driver Export</div>
+                        <div class="input-group">
+                            <select id="code-lang" onchange="CodeGen.generate()">
+                                <option value="cpp">C++ (Embedded/Arduino)</option>
+                                <option value="python">Python (NumPy)</option>
+                            </select>
+                        </div>
+                        <div class="editor-wrapper">
+                            <textarea id="export-area" class="code-area" readonly></textarea>
+                        </div>
+                        <button class="primary" style="margin-top:10px;" onclick="CodeGen.copy()">Copy to Clipboard</button>
+                    </div>
+                </div>
 
-            <div class="control-section">
-                <div class="section-title">RevoScript Editor</div>
-                <div class="editor-wrapper">
-                    <textarea id="script-area" class="code-area" spellcheck="false">
+                <!-- SCRIPT -->
+                <div id="tab-script" class="tab-content panel">
+                    <div class="control-section" style="border-color: var(--accent-primary);">
+                        <div class="section-title" style="color: var(--accent-primary);">✨ Gemini Copilot</div>
+                        <input type="text" id="ai-prompt" placeholder="e.g., Pick up the crate and stack it at x=0">
+                        <button class="primary" onclick="AI.generateScript()">Generate RevoScript ✨</button>
+                    </div>
+
+                    <div class="control-section">
+                        <div class="section-title">RevoScript Editor</div>
+                        <div class="editor-wrapper">
+                            <textarea id="script-area" class="code-area" spellcheck="false">
 // Pick and Place Demo
 SPEED 50
 HOME
@@ -381,82 +590,88 @@ MOVE 0.0 0.8 1.2
 // Drop
 GRIP 0
 HOME</textarea>
+                        </div>
+                        <div class="btn-grid">
+                            <button class="primary" onclick="Script.run()">Execute</button>
+                            <button class="danger" onclick="Script.stop()">Halt</button>
+                        </div>
+                    </div>
+                    
+                    <div class="control-section">
+                        <div class="section-title">Telemetry</div>
+                        <canvas id="telemetry"></canvas>
+                        <div style="display:flex; justify-content:space-between; font-size:9px; color:#555; margin-top:5px;">
+                            <span>T-5s</span>
+                            <span>NOW</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="btn-grid">
-                    <button class="primary" onclick="Script.run()">Execute</button>
-                    <button class="danger" onclick="Script.stop()">Halt</button>
-                </div>
-            </div>
-            
-            <div class="control-section">
-                <div class="section-title">Telemetry</div>
-                <canvas id="telemetry"></canvas>
-                <div style="display:flex; justify-content:space-between; font-size:9px; color:#555; margin-top:5px;">
-                    <span>T-5s</span>
-                    <span>NOW</span>
-                </div>
-            </div>
-        </div>
 
-        <!-- ROS -->
-        <div id="tab-ros" class="tab-content panel">
-            <div class="control-section">
-                <div class="section-title">ROS 2 Integration</div>
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px; background: rgba(0,0,0,0.2);">
-                    <div style="font-size: 32px; margin-bottom: 15px; opacity: 0.6;">🐢</div>
-                    <div style="font-size: 14px; font-weight: 700; color: var(--text-highlight); margin-bottom: 8px;">ROS Bridge Node</div>
-                    <p style="font-size: 11px; color: var(--text-muted); max-width: 220px; line-height: 1.5; margin-bottom: 20px;">
-                        Native DDS communication, TF tree broadcasting, and URDF export capabilities.
-                    </p>
-                    <div style="padding: 6px 12px; border: 1px solid var(--accent-primary); color: var(--accent-primary); font-size: 10px; border-radius: 20px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; background: var(--accent-dim);">
-                        Coming Soon
+                <!-- ROS -->
+                <div id="tab-ros" class="tab-content panel">
+                    <div class="control-section">
+                        <div class="section-title">ROS 2 Integration</div>
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px; background: rgba(0,0,0,0.2);">
+                            <div style="font-size: 32px; margin-bottom: 15px; opacity: 0.6;">🐢</div>
+                            <div style="font-size: 14px; font-weight: 700; color: var(--text-highlight); margin-bottom: 8px;">ROS Bridge Node</div>
+                            <p style="font-size: 11px; color: var(--text-muted); max-width: 220px; line-height: 1.5; margin-bottom: 20px;">
+                                Native DDS communication, TF tree broadcasting, and URDF export capabilities.
+                            </p>
+                            <div style="padding: 6px 12px; border: 1px solid var(--accent-primary); color: var(--accent-primary); font-size: 10px; border-radius: 20px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; background: var(--accent-dim);">
+                                Coming Soon
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- Floating Toggle Button (Visible when panel is closed) -->
+        <button id="side-toggle-btn" onclick="UI.togglePanel(true)" title="Expand Properties">
+            <i class="ph ph-caret-double-right"></i>
+        </button>
 
-        <div style="padding: 15px; border-top: 1px solid var(--border-color); background: #0f0f0f; text-align: center; margin-top: auto;">
-            <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Created By</div>
-            <div style="font-size: 12px; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px;">Saif Khafajah</div>
-        </div>
-    </div>
-
-    <!-- VIEWPORT -->
-    <div id="viewport">
-        <div id="hud-container">
-            <div class="hud-panel">
-                <div class="hud-label">System Status</div>
-                <div class="hud-value" id="hud-status" style="color:var(--status-ok)">ONLINE</div>
-            </div>
-            <div class="hud-panel">
-                <div class="hud-label">Tool Center Point (TCP)</div>
-                <div class="hud-value accent" id="hud-tcp">0.00, 0.00, 0.00</div>
-            </div>
-            <div class="hud-panel">
-                <div class="hud-label">Joint Velocity (Max)</div>
-                <div class="hud-value" id="hud-vel">0.0 rad/s</div>
-            </div>
-        </div>
-
-        <div id="plot-overlay">
-            <div class="plot-header">
-                <div class="plot-title">Live Trajectory</div>
-                <div class="plot-controls">
-                    <button onclick="View.toggleTrailRecord()" title="Toggle 3D Trail">Trail</button>
-                    <button class="danger" onclick="View.clearTrail()" title="Clear 3D">Clr 3D</button>
-                    <button class="primary" onclick="Plotter.togglePause()" title="Pause 2D">||</button>
-                    <button onclick="Plotter.clear()" title="Clear 2D">Clr 2D</button>
+        <!-- VIEWPORT (3D Canvas) -->
+        <div id="viewport">
+            <div id="hud-container">
+                <div class="hud-panel">
+                    <div class="hud-label">System Status</div>
+                    <div class="hud-value" id="hud-status" style="color:var(--status-ok)">ONLINE</div>
+                </div>
+                <div class="hud-panel">
+                    <div class="hud-label">Tool Center Point (TCP)</div>
+                    <div class="hud-value accent" id="hud-tcp">0.00, 0.00, 0.00</div>
+                </div>
+                <div class="hud-panel">
+                    <div class="hud-label">Joint Velocity (Max)</div>
+                    <div class="hud-value" id="hud-vel">0.0 rad/s</div>
                 </div>
             </div>
-            <canvas id="plot-canvas"></canvas>
-            <div class="plot-legend">
-                <span style="color:#ff4444">■ X-Pos</span>
-                <span style="color:#44ff44">■ Y-Pos</span>
-                <span style="color:#4444ff">■ Z-Pos</span>
+
+            <div id="plot-overlay">
+                <div class="plot-header">
+                    <div class="plot-title">Live Trajectory</div>
+                    <div class="plot-controls">
+                        <button onclick="View.toggleTrailRecord()" title="Toggle 3D Trail">Trail</button>
+                        <button class="danger" onclick="View.clearTrail()" title="Clear 3D">Clr 3D</button>
+                        <button class="primary" onclick="Plotter.togglePause()" title="Pause 2D">||</button>
+                        <button onclick="Plotter.clear()" title="Clear 2D">Clr 2D</button>
+                    </div>
+                </div>
+                <canvas id="plot-canvas"></canvas>
+                <div class="plot-legend">
+                    <span style="color:#ff4444">■ X-Pos</span>
+                    <span style="color:#44ff44">■ Y-Pos</span>
+                    <span style="color:#4444ff">■ Z-Pos</span>
+                </div>
+            </div>
+
+            <div id="toast-area"></div>
+            
+            <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #444; pointer-events: none;">
+                RevoLab Simulator V5.2 | Created By Saif Khafajah
             </div>
         </div>
-
-        <div id="toast-area"></div>
     </div>
 </div>
 
@@ -470,18 +685,12 @@ const apiKey = "";
 // --- CONFIGURATION ---
 const PRESETS = {
     ur5: [
-        { type:'r', d:0.4, a:0, alpha:90, offset:0, min:-360, max:360 },
-        { type:'r', d:0, a:-0.425, alpha:0, offset:-90, min:-360, max:360 },
-        { type:'r', d:0, a:-0.392, alpha:0, offset:0, min:-360, max:360 },
-        { type:'r', d:0.1, a:0, alpha:90, offset:90, min:-360, max:360 },
-        { type:'r', d:0.1, a:0, alpha:-90, offset:0, min:-360, max:360 },
-        { type:'r', d:0.1, a:0, alpha:0, offset:0, min:-360, max:360 }
-    ],
-    scara: [
-        { type:'r', d:0.4, a:0.5, alpha:0, offset:0, min:-160, max:160 },
-        { type:'r', d:0.3, a:0.4, alpha:180, offset:0, min:-150, max:150 },
-        { type:'p', d:0.1, a:0, alpha:0, offset:0, min:0, max:0.3 },
-        { type:'r', d:0.1, a:0, alpha:0, offset:0, min:-360, max:360 }
+        { type:'r', d:0.6, a:0, alpha:90, offset:0, min:-360, max:360 },      // Taller Base
+        { type:'r', d:0, a:-0.8, alpha:0, offset:-90, min:-360, max:360 },    // Longer Upper Arm, Vertical (-90)
+        { type:'r', d:0, a:-0.6, alpha:0, offset:0, min:-360, max:360 },      // Longer Forearm
+        { type:'r', d:0.2, a:0, alpha:90, offset:90, min:-360, max:360 },     // Wrist 1
+        { type:'r', d:0.2, a:0, alpha:-90, offset:0, min:-360, max:360 },     // Wrist 2
+        { type:'r', d:0.2, a:0, alpha:0, offset:0, min:-360, max:360 }        // Wrist 3
     ],
     simple: [
         { type:'r', d:0.5, a:0, alpha:90, offset:0, min:-180, max:180 },
@@ -490,130 +699,57 @@ const PRESETS = {
     ]
 };
 
-const Robot = {
-    dh: [], joints: [], targetJoints: [], gripper: 0,
-    
-    init: function(presetName) {
-        this.dh = JSON.parse(JSON.stringify(PRESETS[presetName]));
-        this.joints = new Array(this.dh.length).fill(0);
-        this.targetJoints = new Array(this.dh.length).fill(0);
-        UI.buildDHTable();
-        UI.buildSliders();
-        View.rebuildRobotModel();
-    },
+// --- CORE UTILS (Must be defined before View/Robot) ---
 
-    dhMatrix: function(theta, d, a, alpha) {
-        const ct = Math.cos(theta), st = Math.sin(theta);
-        const ca = Math.cos(alpha), sa = Math.sin(alpha);
-        return new THREE.Matrix4().set(
-            ct, -st*ca, st*sa, a*ct,
-            st, ct*ca, -ct*sa, a*st,
-            0, sa, ca, d,
-            0, 0, 0, 1
-        );
-    },
-
-    forwardKinematics: function(joints) {
-        const transforms = [];
-        let T = new THREE.Matrix4().makeRotationX(-Math.PI/2);
-        transforms.push({ pos: new THREE.Vector3(0,0,0), mat: T.clone() });
-
-        for(let i=0; i<this.dh.length; i++) {
-            const p = this.dh[i];
-            const q = joints[i];
-            let val = (p.type === 'r') ? (q * DEG2RAD) : q;
-            let offset = (p.type === 'r') ? (p.offset * DEG2RAD) : 0;
-            let alpha = p.alpha * DEG2RAD;
-            let mat;
-            if(p.type === 'r') mat = this.dhMatrix(val + offset, p.d, p.a, alpha);
-            else mat = this.dhMatrix(offset, p.d + val, p.a, alpha);
-            T.multiply(mat);
-            transforms.push({ pos: new THREE.Vector3().setFromMatrixPosition(T), mat: T.clone() });
+const Telemetry = {
+    data: [],
+    push: function(val) { this.data.push(val); if(this.data.length > 200) this.data.shift(); this.draw(); },
+    draw: function() {
+        const cvs = document.getElementById('telemetry'); 
+        if (!cvs) return;
+        const ctx = cvs.getContext('2d');
+        if (!ctx) return;
+        
+        if (cvs.width !== cvs.offsetWidth || cvs.height !== cvs.offsetHeight) {
+            cvs.width = cvs.offsetWidth;
+            cvs.height = cvs.offsetHeight;
         }
-        return transforms;
-    },
+        
+        const w = cvs.width; const h = cvs.height;
+        ctx.fillStyle = '#0f0f0f'; ctx.fillRect(0,0,w,h); ctx.strokeStyle = '#ff9100'; ctx.lineWidth = 2; ctx.beginPath();
+        for(let i=0; i<this.data.length; i++) { const x = (i/200)*w; const y = h - (this.data[i] * h * 5); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+        ctx.stroke();
+    }
+};
 
-    solveIK: function(targetPos) {
-        let q = [...this.targetJoints];
-        const lr = 0.5; const maxIter = 50;
-        for(let k=0; k<maxIter; k++) {
-            const chain = this.forwardKinematics(q);
-            const tcp = chain[chain.length-1].pos;
-            const err = new THREE.Vector3().subVectors(targetPos, tcp);
-            if(err.length() < 0.01) break;
-            for(let i=0; i<this.dh.length; i++) {
-                const p = this.dh[i];
-                const frame = chain[i];
-                const pivot = chain[i].pos;
-                const zAxis = new THREE.Vector3(0,0,1).applyMatrix4(chain[i].mat).sub(new THREE.Vector3(0,0,0).applyMatrix4(chain[i].mat)).normalize();
-                let grad = 0;
-                if(p.type === 'r') {
-                    const r = new THREE.Vector3().subVectors(tcp, pivot);
-                    const cross = new THREE.Vector3().crossVectors(zAxis, r);
-                    grad = cross.dot(err);
-                } else grad = zAxis.dot(err);
-                q[i] += grad * lr;
-            }
-        }
-        q = q.map(v => { while(v > 180) v-=360; while(v < -180) v+=360; return v; });
-        this.targetJoints = q;
-        UI.updateSliders();
-        Serial.sendThrottled(this.targetJoints);
+const Plotter = {
+    canvas: null, ctx: null, dataX: [], dataY: [], dataZ: [], paused: false,
+    init: function() { this.canvas = document.getElementById('plot-canvas'); if(!this.canvas) return; this.ctx = this.canvas.getContext('2d'); },
+    push: function(x, y, z) {
+        if(this.paused) return;
+        if(!this.ctx) this.init();
+        if(!this.ctx) return;
+        this.dataX.push(x); this.dataY.push(y); this.dataZ.push(z);
+        const maxLen = 200;
+        if(this.dataX.length > maxLen) { this.dataX.shift(); this.dataY.shift(); this.dataZ.shift(); }
+        this.draw();
     },
-
-    liveIK: function() {
-        const x = parseFloat(document.getElementById('ik-x').value) || 0;
-        const y = parseFloat(document.getElementById('ik-y').value) || 0;
-        const z = parseFloat(document.getElementById('ik-z').value) || 0;
-        View.updateGhost(new THREE.Vector3(x,y,z));
-        this.solveIK(new THREE.Vector3(x,y,z));
+    togglePause: function() { this.paused = !this.paused; },
+    clear: function() { this.dataX = []; this.dataY = []; this.dataZ = []; },
+    draw: function() {
+        const cvs = this.canvas; const ctx = this.ctx;
+        if(cvs.width !== cvs.offsetWidth || cvs.height !== cvs.offsetHeight) { cvs.width = cvs.offsetWidth; cvs.height = cvs.offsetHeight; }
+        const w = cvs.width; const h = cvs.height;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0,0,w,h);
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+        this.drawSeries(this.dataX, '#ff4444', w, h); this.drawSeries(this.dataY, '#44ff44', w, h); this.drawSeries(this.dataZ, '#4444ff', w, h);
     },
-
-    jogInterval: null,
-    startJog: function(axis, amount) {
-        if(this.jogInterval) clearInterval(this.jogInterval);
-        this.jogInterval = setInterval(() => {
-            const el = document.getElementById(`ik-${axis}`);
-            let val = parseFloat(el.value) + amount;
-            el.value = val.toFixed(2);
-            this.liveIK();
-        }, 50);
-    },
-    stopJog: function() { clearInterval(this.jogInterval); },
-
-    setGripper: function(val) { 
-        this.gripper = parseFloat(val); 
-        Serial.sendThrottled(this.targetJoints);
-    },
-
-    setJoint: function(idx, val) {
-        this.targetJoints[idx] = parseFloat(val);
-        document.getElementById(`val-j${idx}`).innerText = this.targetJoints[idx].toFixed(1) + '°';
-        Serial.sendThrottled(this.targetJoints);
-    },
-
-    addLink: function() {
-        this.dh.push({type:'r', d:0.2, a:0.2, alpha:0, offset:0, min:-180, max:180});
-        this.joints.push(0); this.targetJoints.push(0);
-        UI.buildDHTable();
-        UI.buildSliders();
-        View.rebuildRobotModel();
-        UI.notify("Link Added", "ok");
-    },
-    
-    removeLink: function() {
-        if(this.dh.length > 2) {
-            this.dh.pop(); this.joints.pop(); this.targetJoints.pop();
-            UI.buildDHTable();
-            UI.buildSliders();
-            View.rebuildRobotModel();
-            UI.notify("Link Removed", "warn");
-        }
-    },
-    
-    rebuild: function() {
-        View.rebuildRobotModel();
-        UI.notify("Kinematics Updated", "ok");
+    drawSeries: function(data, color, w, h) {
+        if(data.length < 2) return;
+        const ctx = this.ctx; ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+        const scale = h/4; const mid = h/2; const step = w / 200;
+        for(let i=0; i<data.length; i++) { const x = i * step; const y = mid - (data[i] * scale); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+        ctx.stroke();
     }
 };
 
@@ -657,6 +793,354 @@ const Serial = {
         // Simple CSV format: J1,J2,J3,J4,J5,J6,Gripper\n
         const data = joints.map(j => j.toFixed(1)).join(',') + ',' + Robot.gripper.toFixed(2) + '\n';
         try { await this.writer.write(new TextEncoder().encode(data)); } catch (e) { console.error(e); }
+    }
+};
+
+const URDF = {
+    parser: new DOMParser(),
+    
+    handleFile: function(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => this.parse(e.target.result);
+            reader.readAsText(input.files[0]);
+        }
+    },
+
+    parse: function(xmlString) {
+        try {
+            const xmlDoc = this.parser.parseFromString(xmlString, "text/xml");
+            const robotName = xmlDoc.querySelector('robot')?.getAttribute('name') || "urdf_robot";
+            UI.notify(`Loading URDF: ${robotName}`, "ok");
+
+            const links = {};
+            const joints = [];
+            const materials = {};
+
+            // Parse Materials
+            xmlDoc.querySelectorAll('material').forEach(m => {
+                const name = m.getAttribute('name');
+                const colorNode = m.querySelector('color');
+                if (name && colorNode) {
+                    const rgba = colorNode.getAttribute('rgba').split(' ').map(parseFloat);
+                    materials[name] = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color(rgba[0], rgba[1], rgba[2]),
+                        roughness: 0.5, metalness: 0.5
+                    });
+                }
+            });
+
+            // Parse Links
+            xmlDoc.querySelectorAll('link').forEach(l => {
+                const name = l.getAttribute('name');
+                const visual = l.querySelector('visual');
+                const geometry = visual?.querySelector('geometry');
+                const origin = visual?.querySelector('origin');
+                
+                links[name] = { name, visual, geometry, origin };
+            });
+
+            // Parse Joints
+            xmlDoc.querySelectorAll('joint').forEach(j => {
+                joints.push({
+                    name: j.getAttribute('name'),
+                    type: j.getAttribute('type'),
+                    parent: j.querySelector('parent').getAttribute('link'),
+                    child: j.querySelector('child').getAttribute('link'),
+                    origin: j.querySelector('origin'),
+                    axis: j.querySelector('axis')
+                });
+            });
+
+            this.buildScene(links, joints, materials);
+        } catch (e) {
+            console.error(e);
+            UI.notify("URDF Parse Error", "err");
+        }
+    },
+
+    buildScene: function(links, joints, materials) {
+        // Switch mode
+        Robot.mode = 'urdf';
+        Robot.joints = [];
+        Robot.urdfJoints = []; // Store THREE objects to animate
+        
+        // Hide DH table, show warning
+        document.getElementById('dh-section').style.display = 'none';
+        document.getElementById('ik-controls').style.opacity = '0.3';
+        document.getElementById('ik-controls').style.pointerEvents = 'none';
+        document.getElementById('urdf-ik-warning').style.display = 'block';
+
+        // Clear scene
+        View.scene.remove(...View.meshes.parts.map(p => p.mesh));
+        View.scene.remove(...View.meshes.frames);
+        if (View.meshes.gripper) View.scene.remove(View.meshes.gripper);
+        if (Robot.urdfRoot) View.scene.remove(Robot.urdfRoot);
+
+        // Find Root (link that is not a child of any joint)
+        const childLinks = new Set(joints.map(j => j.child));
+        const rootLinkName = Object.keys(links).find(l => !childLinks.has(l));
+        
+        if (!rootLinkName) return UI.notify("Invalid URDF: No root link", "err");
+
+        Robot.urdfRoot = new THREE.Group();
+        View.scene.add(Robot.urdfRoot);
+
+        // Recursive Build
+        const buildNode = (linkName, parentObj) => {
+            const linkData = links[linkName];
+            const linkObj = new THREE.Group();
+            
+            // Visuals
+            if (linkData.visual && linkData.geometry) {
+                const mesh = this.createVisual(linkData.geometry, linkData.visual, materials);
+                if (linkData.origin) {
+                    const xyz = (linkData.origin.getAttribute('xyz') || '0 0 0').split(' ').map(parseFloat);
+                    const rpy = (linkData.origin.getAttribute('rpy') || '0 0 0').split(' ').map(parseFloat);
+                    mesh.position.set(xyz[0], xyz[1], xyz[2]);
+                    mesh.rotation.set(rpy[0], rpy[1], rpy[2]);
+                }
+                linkObj.add(mesh);
+            }
+            parentObj.add(linkObj);
+
+            // Find joints where this link is parent
+            const childJoints = joints.filter(j => j.parent === linkName);
+            
+            childJoints.forEach(j => {
+                const jointObj = new THREE.Group();
+                
+                // Joint Origin (Fixed transform)
+                if (j.origin) {
+                    const xyz = (j.origin.getAttribute('xyz') || '0 0 0').split(' ').map(parseFloat);
+                    const rpy = (j.origin.getAttribute('rpy') || '0 0 0').split(' ').map(parseFloat);
+                    jointObj.position.set(xyz[0], xyz[1], xyz[2]);
+                    jointObj.rotation.set(rpy[0], rpy[1], rpy[2]);
+                }
+
+                linkObj.add(jointObj);
+
+                // Add to controllable joints if moveable
+                if (j.type !== 'fixed') {
+                    const axis = (j.axis?.getAttribute('xyz') || '1 0 0').split(' ').map(parseFloat);
+                    Robot.joints.push(0);
+                    Robot.urdfJoints.push({
+                        obj: jointObj,
+                        type: j.type,
+                        axis: new THREE.Vector3(axis[0], axis[1], axis[2]),
+                        name: j.name
+                    });
+                }
+
+                // Recurse
+                buildNode(j.child, jointObj);
+            });
+        };
+
+        buildNode(rootLinkName, Robot.urdfRoot);
+        
+        // Rebuild Sliders
+        Robot.targetJoints = new Array(Robot.joints.length).fill(0);
+        this.buildSliders(Robot.urdfJoints);
+        
+        UI.notify("URDF Imported Successfully", "ok");
+    },
+
+    createVisual: function(geomNode, visualNode, materials) {
+        let geometry;
+        const box = geomNode.querySelector('box');
+        const cyl = geomNode.querySelector('cylinder');
+        const sph = geomNode.querySelector('sphere');
+        
+        if (box) {
+            const size = box.getAttribute('size').split(' ').map(parseFloat);
+            geometry = new THREE.BoxGeometry(size[0], size[1], size[2]);
+        } else if (cyl) {
+            const r = parseFloat(cyl.getAttribute('radius'));
+            const l = parseFloat(cyl.getAttribute('length'));
+            geometry = new THREE.CylinderGeometry(r, r, l, 32);
+            // URDF cylinders align along Z, Three.js along Y. Fix rotation.
+            geometry.rotateX(Math.PI/2);
+        } else if (sph) {
+            geometry = new THREE.SphereGeometry(parseFloat(sph.getAttribute('radius')), 32, 32);
+        } else {
+            // Fallback for meshes/unknowns
+            geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1); 
+        }
+
+        let material = View.materials.link; // Default
+        const matNode = visualNode.querySelector('material');
+        if (matNode) {
+            const name = matNode.getAttribute('name');
+            if (materials[name]) material = materials[name];
+            else {
+                const col = matNode.querySelector('color');
+                if(col) {
+                    const rgba = col.getAttribute('rgba').split(' ').map(parseFloat);
+                    material = new THREE.MeshStandardMaterial({color: new THREE.Color(rgba[0], rgba[1], rgba[2])});
+                }
+            }
+        }
+
+        return new THREE.Mesh(geometry, material);
+    },
+
+    buildSliders: function(joints) {
+        const div = document.getElementById('joint-sliders'); 
+        div.innerHTML = '';
+        joints.forEach((j, i) => {
+            const row = document.createElement('div'); row.className = 'input-group';
+            // Limit range for sliders (simplified)
+            row.innerHTML = `<div class="row"><label title="${j.name}">J${i+1}</label><span style="font-size:10px; color:#ff9100" id="val-j${i}">0°</span></div><input type="range" min="-180" max="180" value="0" oninput="Robot.setJoint(${i}, this.value)">`;
+            div.appendChild(row);
+        });
+    }
+};
+
+const Robot = {
+    dh: [], joints: [], targetJoints: [], gripper: 0,
+    mode: 'dh', // 'dh' or 'urdf'
+    urdfJoints: [], urdfRoot: null,
+    
+    init: function(presetName) {
+        this.mode = 'dh';
+        this.dh = JSON.parse(JSON.stringify(PRESETS[presetName]));
+        this.joints = new Array(this.dh.length).fill(0);
+        this.targetJoints = new Array(this.dh.length).fill(0);
+        
+        // Reset UI visibility
+        document.getElementById('dh-section').style.display = 'block';
+        document.getElementById('ik-controls').style.opacity = '1';
+        document.getElementById('ik-controls').style.pointerEvents = 'auto';
+        document.getElementById('urdf-ik-warning').style.display = 'none';
+        if(this.urdfRoot) View.scene.remove(this.urdfRoot);
+
+        UI.buildDHTable();
+        UI.buildSliders();
+        View.rebuildRobotModel();
+    },
+
+    dhMatrix: function(theta, d, a, alpha) {
+        const ct = Math.cos(theta), st = Math.sin(theta);
+        const ca = Math.cos(alpha), sa = Math.sin(alpha);
+        return new THREE.Matrix4().set(
+            ct, -st*ca, st*sa, a*ct,
+            st, ct*ca, -ct*sa, a*st,
+            0, sa, ca, d,
+            0, 0, 0, 1
+        );
+    },
+
+    forwardKinematics: function(joints) {
+        if (this.mode === 'urdf') return []; // URDF handles its own visuals in updateVisuals
+
+        const transforms = [];
+        let T = new THREE.Matrix4().makeRotationX(-Math.PI/2);
+        transforms.push({ pos: new THREE.Vector3(0,0,0), mat: T.clone() });
+
+        for(let i=0; i<this.dh.length; i++) {
+            const p = this.dh[i];
+            const q = joints[i];
+            let val = (p.type === 'r') ? (q * DEG2RAD) : q;
+            let offset = (p.type === 'r') ? (p.offset * DEG2RAD) : 0;
+            let alpha = p.alpha * DEG2RAD;
+            let mat;
+            if(p.type === 'r') mat = this.dhMatrix(val + offset, p.d, p.a, alpha);
+            else mat = this.dhMatrix(offset, p.d + val, p.a, alpha);
+            T.multiply(mat);
+            transforms.push({ pos: new THREE.Vector3().setFromMatrixPosition(T), mat: T.clone() });
+        }
+        return transforms;
+    },
+
+    solveIK: function(targetPos) {
+        if (this.mode === 'urdf') return; // IK Not supported for raw URDF yet
+
+        let q = [...this.targetJoints];
+        const lr = 0.5; const maxIter = 50;
+        for(let k=0; k<maxIter; k++) {
+            const chain = this.forwardKinematics(q);
+            const tcp = chain[chain.length-1].pos;
+            const err = new THREE.Vector3().subVectors(targetPos, tcp);
+            if(err.length() < 0.01) break;
+            for(let i=0; i<this.dh.length; i++) {
+                const p = this.dh[i];
+                const frame = chain[i];
+                const pivot = chain[i].pos;
+                const zAxis = new THREE.Vector3(0,0,1).applyMatrix4(chain[i].mat).sub(new THREE.Vector3(0,0,0).applyMatrix4(chain[i].mat)).normalize();
+                let grad = 0;
+                if(p.type === 'r') {
+                    const r = new THREE.Vector3().subVectors(tcp, pivot);
+                    const cross = new THREE.Vector3().crossVectors(zAxis, r);
+                    grad = cross.dot(err);
+                } else grad = zAxis.dot(err);
+                q[i] += grad * lr;
+            }
+        }
+        q = q.map(v => { while(v > 180) v-=360; while(v < -180) v+=360; return v; });
+        this.targetJoints = q;
+        UI.updateSliders();
+        Serial.sendThrottled(this.targetJoints);
+    },
+
+    liveIK: function() {
+        if (this.mode === 'urdf') return; 
+        const x = parseFloat(document.getElementById('ik-x').value) || 0;
+        const y = parseFloat(document.getElementById('ik-y').value) || 0;
+        const z = parseFloat(document.getElementById('ik-z').value) || 0;
+        View.updateGhost(new THREE.Vector3(x,y,z));
+        this.solveIK(new THREE.Vector3(x,y,z));
+    },
+
+    jogInterval: null,
+    startJog: function(axis, amount) {
+        if (this.mode === 'urdf') return;
+        if(this.jogInterval) clearInterval(this.jogInterval);
+        this.jogInterval = setInterval(() => {
+            const el = document.getElementById(`ik-${axis}`);
+            let val = parseFloat(el.value) + amount;
+            el.value = val.toFixed(2);
+            this.liveIK();
+        }, 50);
+    },
+    stopJog: function() { clearInterval(this.jogInterval); },
+
+    setGripper: function(val) { 
+        this.gripper = parseFloat(val); 
+        Serial.sendThrottled(this.targetJoints);
+    },
+
+    setJoint: function(idx, val) {
+        this.targetJoints[idx] = parseFloat(val);
+        document.getElementById(`val-j${idx}`).innerText = this.targetJoints[idx].toFixed(1) + '°';
+        Serial.sendThrottled(this.targetJoints);
+    },
+
+    addLink: function() {
+        if (this.mode === 'urdf') return;
+        this.dh.push({type:'r', d:0.2, a:0.2, alpha:0, offset:0, min:-180, max:180});
+        this.joints.push(0); this.targetJoints.push(0);
+        UI.buildDHTable();
+        UI.buildSliders();
+        View.rebuildRobotModel();
+        UI.notify("Link Added", "ok");
+    },
+    
+    removeLink: function() {
+        if (this.mode === 'urdf') return;
+        if(this.dh.length > 2) {
+            this.dh.pop(); this.joints.pop(); this.targetJoints.pop();
+            UI.buildDHTable();
+            UI.buildSliders();
+            View.rebuildRobotModel();
+            UI.notify("Link Removed", "warn");
+        }
+    },
+    
+    rebuild: function() {
+        if (this.mode === 'urdf') return;
+        View.rebuildRobotModel();
+        UI.notify("Kinematics Updated", "ok");
     }
 };
 
@@ -780,6 +1264,24 @@ const View = {
 
     trailIdx: 0, trailCount: 0,
     updateVisuals: function(chain) {
+        // URDF Mode Handling
+        if (Robot.mode === 'urdf') {
+            Robot.urdfJoints.forEach((j, i) => {
+                const angle = Robot.joints[i] * DEG2RAD;
+                // Simple axis rotation
+                j.obj.quaternion.setFromAxisAngle(j.axis, angle);
+            });
+            // Update TCP for HUD (Approximation: Position of last joint in world)
+            if (Robot.urdfJoints.length > 0) {
+                const lastObj = Robot.urdfJoints[Robot.urdfJoints.length-1].obj;
+                const pos = new THREE.Vector3();
+                lastObj.getWorldPosition(pos);
+                document.getElementById('hud-tcp').innerText = `${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}`;
+            }
+            return;
+        }
+
+        // DH Mode Handling
         if (this.meshes.frames[0]) {
             this.meshes.frames[0].position.copy(chain[0].pos);
             this.meshes.frames[0].quaternion.setFromRotationMatrix(chain[0].mat);
@@ -938,37 +1440,6 @@ const View = {
     }
 };
 
-const Plotter = {
-    canvas: null, ctx: null, dataX: [], dataY: [], dataZ: [], paused: false,
-    init: function() { this.canvas = document.getElementById('plot-canvas'); if(!this.canvas) return; this.ctx = this.canvas.getContext('2d'); },
-    push: function(x, y, z) {
-        if(this.paused) return;
-        if(!this.ctx) this.init();
-        if(!this.ctx) return;
-        this.dataX.push(x); this.dataY.push(y); this.dataZ.push(z);
-        const maxLen = 200;
-        if(this.dataX.length > maxLen) { this.dataX.shift(); this.dataY.shift(); this.dataZ.shift(); }
-        this.draw();
-    },
-    togglePause: function() { this.paused = !this.paused; },
-    clear: function() { this.dataX = []; this.dataY = []; this.dataZ = []; },
-    draw: function() {
-        const cvs = this.canvas; const ctx = this.ctx;
-        if(cvs.width !== cvs.offsetWidth || cvs.height !== cvs.offsetHeight) { cvs.width = cvs.offsetWidth; cvs.height = cvs.offsetHeight; }
-        const w = cvs.width; const h = cvs.height;
-        ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0,0,w,h);
-        ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
-        this.drawSeries(this.dataX, '#ff4444', w, h); this.drawSeries(this.dataY, '#44ff44', w, h); this.drawSeries(this.dataZ, '#4444ff', w, h);
-    },
-    drawSeries: function(data, color, w, h) {
-        if(data.length < 2) return;
-        const ctx = this.ctx; ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
-        const scale = h/4; const mid = h/2; const step = w / 200;
-        for(let i=0; i<data.length; i++) { const x = i * step; const y = mid - (data[i] * scale); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
-        ctx.stroke();
-    }
-};
-
 const AI = {
     generateScript: async function() {
         const prompt = document.getElementById('ai-prompt').value;
@@ -1036,17 +1507,40 @@ const UI = {
     switchTab: function(id) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        if(window.event && window.event.target.classList.contains('tab-btn')) window.event.target.classList.add('active');
-        else {
-             const btns = document.querySelectorAll('.tab-btn');
-             if (id === 'setup') btns[0].classList.add('active');
-             if (id === 'control') btns[1].classList.add('active');
-             if (id === 'script') btns[2].classList.add('active');
-             if (id === 'ros') btns[3].classList.add('active');
-        }
+        // Activate icon button based on text match or explicit logic
+        // Simple iteration to find the matching button
+        const btns = document.querySelectorAll('.tab-btn');
+        if (id === 'setup') btns[0].classList.add('active');
+        if (id === 'control') btns[1].classList.add('active');
+        if (id === 'script') btns[2].classList.add('active');
+        if (id === 'ros') btns[3].classList.add('active');
+
         document.getElementById(`tab-${id}`).classList.add('active');
         if(id === 'control') CodeGen.generate();
+        
+        // Auto-expand if collapsed when clicking a tab
+        if(document.getElementById('tools-panel-container').classList.contains('collapsed')) {
+            this.togglePanel(true);
+        }
     },
+    
+    togglePanel: function(show) {
+        const panel = document.getElementById('tools-panel-container');
+        const btn = document.getElementById('side-toggle-btn');
+        if(show) {
+            panel.classList.remove('collapsed');
+            btn.classList.remove('visible');
+        } else {
+            panel.classList.add('collapsed');
+            btn.classList.add('visible');
+        }
+    },
+    
+    // --- Draggable Panel Logic ---
+    initDraggable: function() {
+        // Disabled for rigid layout
+    },
+
     buildDHTable: function() {
         const tbody = document.querySelector('#dh-table tbody'); tbody.innerHTML = '';
         Robot.dh.forEach((p, i) => {
@@ -1076,18 +1570,6 @@ const UI = {
         const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
         if(type==='err') t.style.borderColor = '#ff1744'; if(type==='ok') t.style.borderColor = '#00e676';
         document.getElementById('toast-area').appendChild(t); setTimeout(() => t.remove(), 3000);
-    }
-};
-
-const Telemetry = {
-    data: [],
-    push: function(val) { this.data.push(val); if(this.data.length > 200) this.data.shift(); this.draw(); },
-    draw: function() {
-        const cvs = document.getElementById('telemetry'); const ctx = cvs.getContext('2d');
-        const w = cvs.width = cvs.offsetWidth; const h = cvs.height = cvs.offsetHeight;
-        ctx.fillStyle = '#0f0f0f'; ctx.fillRect(0,0,w,h); ctx.strokeStyle = '#ff9100'; ctx.lineWidth = 2; ctx.beginPath();
-        for(let i=0; i<this.data.length; i++) { const x = (i/200)*w; const y = h - (this.data[i] * h * 5); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
-        ctx.stroke();
     }
 };
 
@@ -1273,6 +1755,7 @@ window.onload = function() {
                 // Initialize App
                 View.init(); 
                 Robot.init('simple');
+                UI.initDraggable(); // Initialize draggable logic
 
                 // Remove loader from DOM after fade
                 setTimeout(() => {
@@ -1285,7 +1768,3 @@ window.onload = function() {
 </script>
 </body>
 </html>
-
-
-
-
